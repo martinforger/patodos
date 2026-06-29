@@ -32,15 +32,15 @@ la prioridad es una experiencia simple, directa y en español.
 
 ## 🧱 Stack tecnológico
 
-| Capa | Tecnología |
-|---|---|
-| Frontend | Next.js 16 (App Router, React 19, Server Components) |
-| UI | shadcn/ui + Tailwind CSS |
-| Backend | Supabase — PostgreSQL 17, Auth, Storage, RLS |
-| Cliente BD | `@supabase/supabase-js` v2 + `@supabase/ssr` |
-| Lenguaje | TypeScript estricto (`strict: true`, sin `any`) |
-| Validación | Zod + React Hook Form |
-| Tour | Onborda |
+| Capa       | Tecnología                                           |
+| ---------- | ---------------------------------------------------- |
+| Frontend   | Next.js 16 (App Router, React 19, Server Components) |
+| UI         | shadcn/ui + Tailwind CSS                             |
+| Backend    | Supabase — PostgreSQL 17, Auth, Storage, RLS         |
+| Cliente BD | `@supabase/supabase-js` v2 + `@supabase/ssr`         |
+| Lenguaje   | TypeScript estricto (`strict: true`, sin `any`)      |
+| Validación | Zod + React Hook Form                                |
+| Tour       | Onborda                                              |
 
 ---
 
@@ -142,26 +142,26 @@ bienvenida.
 
 ### Scripts disponibles
 
-| Comando | Acción |
-|---|---|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Build de producción |
+| Comando         | Acción                 |
+| --------------- | ---------------------- |
+| `npm run dev`   | Servidor de desarrollo |
+| `npm run build` | Build de producción    |
 | `npm run start` | Servidor de producción |
-| `npm run lint` | ESLint |
+| `npm run lint`  | ESLint                 |
 
 ---
 
 ## 👥 Roles y permisos
 
-| Acción | operador | coordinador | administrador |
-|---|:---:|:---:|:---:|
-| Registrar ingreso / egreso | ✓ | ✓ | ✓ |
-| Ver inventario e historial del centro | ✓ | ✓ | ✓ |
-| Registrar solicitudes y personas | ✓ | ✓ | ✓ |
-| Anular movimientos | — | ✓ | ✓ |
-| Gestionar usuarios del centro | — | ✓ | ✓ |
-| Generar reportes | — | ✓ | ✓ |
-| Panel multi-centro y crear centros | — | — | ✓ |
+| Acción                                | operador | coordinador | administrador |
+| ------------------------------------- | :------: | :---------: | :-----------: |
+| Registrar ingreso / egreso            |    ✓     |      ✓      |       ✓       |
+| Ver inventario e historial del centro |    ✓     |      ✓      |       ✓       |
+| Registrar solicitudes y personas      |    ✓     |      ✓      |       ✓       |
+| Anular movimientos                    |    —     |      ✓      |       ✓       |
+| Gestionar usuarios del centro         |    —     |      ✓      |       ✓       |
+| Generar reportes                      |    —     |      ✓      |       ✓       |
+| Panel multi-centro y crear centros    |    —     |      —      |       ✓       |
 
 ---
 
@@ -187,6 +187,20 @@ bienvenidas. Antes de abrir un PR:
 2. Respeta las convenciones: TypeScript estricto sin `any`, Server Components por
    defecto, componentes propios en `components/app/`, validación con Zod.
 3. Asegúrate de que `npm run build` y `npm run lint` pasen en verde.
+
+---
+
+## 👨‍💻 Colaboradores
+
+### Desarrolladores / Colaboradores
+
+- **Luis Martin** (@martinforger)
+- **Devony Ramirez** (@DevonyRamirez)
+- **Matias Silveira** (@hetairoii)
+
+### Probadores
+
+_Por agregar..._
 
 ---
 
