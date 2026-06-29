@@ -12,17 +12,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Gate de onboarding: si el usuario no está asignado a ningún centro
   // (y no es admin, que siempre tiene centro) lo mandamos a /bienvenida.
-  const { data: perfil } = await supabase.rpc('sp_mi_perfil')
+  const { data: perfilRaw } = await supabase.rpc('sp_mi_perfil')
+  const perfil = perfilRaw as { rol: string } | null
   if (!perfil) redirect('/bienvenida')
 
   return (
-    <AppTour>
+    <AppTour userId={user.id}>
       <div className="flex h-screen overflow-hidden">
-        <Sidebar />
+        <Sidebar rol={perfil.rol} />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Barra superior móvil */}
           <header className="flex md:hidden items-center gap-3 border-b bg-sidebar px-4 py-3 shrink-0">
-            <MobileNav />
+            <MobileNav rol={perfil.rol} />
             <span className="font-bold text-sm text-sidebar-foreground">Ayuda Humanitaria</span>
           </header>
           <main id="tour-content" className="flex-1 overflow-y-auto bg-background p-4 md:p-6">

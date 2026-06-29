@@ -52,6 +52,10 @@ export default async function EgresosPage() {
     p_insumo_id: undefined,
   })
 
+  const { data: inventarioRaw } = await supabase.rpc('sp_inventario_centro', {
+    p_centro_id: perfil.centro_id,
+  })
+
   return (
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -66,7 +70,8 @@ export default async function EgresosPage() {
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
           insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
           destinos={(destinos as { id: string; nombre: string; municipio: string; estado_geo: string }[]) ?? []}
-          solicitudesPendientes={(solicitudesPendientes as { id: string; insumo: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }[]) ?? []}
+          solicitudesPendientes={(solicitudesPendientes as { id: string; insumo_id: string; insumo: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }[]) ?? []}
+          inventario={(inventarioRaw as { insumo_id: string; insumo: string; stock: number }[]) ?? []}
         />
       </div>
 

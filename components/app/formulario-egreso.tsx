@@ -20,7 +20,18 @@ type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 type Destino = { id: string; nombre: string; municipio: string; estado_geo: string }
 type Responsable = { persona_id: string | null; nombre: string; apellido: string; telefono: string }
-type SolicitudPendiente = { id: string; insumo: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }
+type SolicitudPendiente = {
+  id: string
+  insumo_id: string
+  insumo: string
+  cantidad_solicitada: number
+  solicitante: string
+  fecha_solicitud: string
+  estado: string
+}
+type ItemInventario = { insumo_id: string; insumo: string; stock: number }
+
+type FaltanteInfo = { insumo: string; solicitado: number; disponible: number; falta: number }
 
 const inputCls = 'w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 const labelCls = 'text-sm font-medium'
@@ -35,7 +46,6 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   )
 }
 
-// Traduce mensajes crudos de Postgres a algo legible para el voluntario.
 function traducirErrorEgreso(mensaje: string): string {
   if (mensaje.includes('persona_contacto_id')) {
     return 'Debes indicar una persona de contacto que recibe el egreso.'
@@ -59,14 +69,26 @@ type Props = {
   insumos: Insumo[]
   destinos: Destino[]
   solicitudesPendientes?: SolicitudPendiente[]
+  inventario?: ItemInventario[]
 }
 
-export function FormularioEgreso({ centroId, categorias, insumos, destinos, solicitudesPendientes = [] }: Props) {
+export function FormularioEgreso({ centroId, categorias, insumos, destinos, solicitudesPendientes = [], inventario = [] }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Insumos a despachar (multi-insumo): empieza con un renglón vacío.
+  // Mapa insumo_id → stock para lookups rápidos
+  const stockMap = Object.fromEntries(inventario.map((i) => [i.insumo_id, i.stock]))
+
+  // Solicitud seleccionada al inicio
+  const [solicitudId, setSolicitudId] = useState('')
+  const [faltantes, setFaltantes] = useState<FaltanteInfo[]>([])
+
+  // Insumos a despachar
   const [items, setItems] = useState<ItemEgreso[]>([{ insumo_id: '', cantidad: '', solicitud_id: '' }])
+
+  // Diálogo de confirmación por stock insuficiente
+  const [confirmandoFaltantes, setConfirmandoFaltantes] = useState(false)
+  const [submitPayload, setSubmitPayload] = useState<(() => Promise<void>) | null>(null)
 
   // Contacto existente
   const [busquedaContacto, setBusquedaContacto] = useState('')
@@ -105,6 +127,38 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
 
   const destinoModo = watch('destino_modo')
   const contactoModo = watch('contacto_modo')
+
+  // Cuando cambia la solicitud seleccionada → comparar con inventario y auto-poblar
+  function seleccionarSolicitud(id: string) {
+    setSolicitudId(id)
+    setFaltantes([])
+
+    if (!id) {
+      setItems([{ insumo_id: '', cantidad: '', solicitud_id: '' }])
+      return
+    }
+
+    const sol = solicitudesPendientes.find((s) => s.id === id)
+    if (!sol) return
+
+    const stock = stockMap[sol.insumo_id] ?? 0
+    const disponible = Math.min(stock, sol.cantidad_solicitada)
+
+    if (stock < sol.cantidad_solicitada) {
+      setFaltantes([{
+        insumo: sol.insumo,
+        solicitado: sol.cantidad_solicitada,
+        disponible: stock,
+        falta: sol.cantidad_solicitada - stock,
+      }])
+    }
+
+    setItems([{
+      insumo_id: sol.insumo_id,
+      cantidad: disponible > 0 ? disponible : '',
+      solicitud_id: id,
+    }])
+  }
 
   function actualizarItem(index: number, patch: Partial<ItemEgreso>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)))
@@ -178,18 +232,39 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     return (res as { id: string }).id
   }
 
+  async function ejecutarEnvio(
+    data: EgresoData,
+    destinoId: string,
+    contactoId: string,
+    itemsPayload: { insumo_id: string; cantidad: number; solicitud_id?: string }[]
+  ) {
+    const supabase = createClient()
+    const { error: rpcError } = await supabase.rpc('sp_registrar_egreso_multiple', {
+      p_centro_id: centroId,
+      p_fecha: data.fecha,
+      p_destino_id: destinoId,
+      p_persona_contacto_id: contactoId,
+      p_responsables: responsables,
+      p_observaciones: data.observaciones || undefined,
+      p_items: itemsPayload,
+    })
+
+    if (rpcError) { setError(traducirErrorEgreso(rpcError.message)); return }
+    cerrar()
+    router.refresh()
+  }
+
   async function onSubmit(data: EgresoData) {
     setError(null)
     const supabase = createClient()
+    void supabase // used below via ejecutarEnvio
 
-    // Validar insumos (al menos uno, con cantidad > 0)
     const itemsValidos = items.filter((it) => it.insumo_id && it.cantidad !== '' && Number(it.cantidad) > 0)
     if (itemsValidos.length === 0) {
       setError('Agregue al menos un insumo con cantidad mayor a cero.')
       return
     }
-    const insumosRepetidos = new Set(itemsValidos.map((it) => it.insumo_id)).size !== itemsValidos.length
-    if (insumosRepetidos) {
+    if (new Set(itemsValidos.map((it) => it.insumo_id)).size !== itemsValidos.length) {
       setError('Hay insumos repetidos. Use un solo renglón por insumo.')
       return
     }
@@ -208,7 +283,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
       if (!destinoId) { setError('Error al registrar el destino'); return }
     }
 
-    // Resolver persona contacto (obligatoria: quien recibe el egreso)
+    // Resolver persona contacto
     let contactoId: string | null = null
     if (data.contacto_modo === 'existente') {
       if (!contactoSeleccionado) { setError('Seleccione la persona de contacto que recibe'); return }
@@ -223,27 +298,23 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     }
     if (!contactoId) { setError('La persona de contacto es obligatoria'); return }
 
-    // La vinculación de solicitud por insumo va dentro del SP (atómica).
     const itemsPayload = itemsValidos.map((it) => ({
       insumo_id: it.insumo_id,
       cantidad: Number(it.cantidad),
       solicitud_id: it.solicitud_id || undefined,
     }))
 
-    const { error: rpcError } = await supabase.rpc('sp_registrar_egreso_multiple', {
-      p_centro_id: centroId,
-      p_fecha: data.fecha,
-      p_destino_id: destinoId ?? undefined,
-      p_persona_contacto_id: contactoId ?? undefined,
-      p_responsables: responsables,
-      p_observaciones: data.observaciones || undefined,
-      p_items: itemsPayload,
-    })
+    const finalDestinoId = destinoId!
+    const finalContactoId = contactoId!
 
-    if (rpcError) { setError(traducirErrorEgreso(rpcError.message)); return }
+    // Si hay faltantes y la solicitud está vinculada, pedir confirmación
+    if (faltantes.length > 0 && solicitudId) {
+      setSubmitPayload(() => () => ejecutarEnvio(data, finalDestinoId, finalContactoId, itemsPayload))
+      setConfirmandoFaltantes(true)
+      return
+    }
 
-    cerrar()
-    router.refresh()
+    await ejecutarEnvio(data, finalDestinoId, finalContactoId, itemsPayload)
   }
 
   function onInvalid() {
@@ -263,6 +334,10 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     setBusquedaResp('')
     setResultadosResp([])
     setItems([{ insumo_id: '', cantidad: '', solicitud_id: '' }])
+    setSolicitudId('')
+    setFaltantes([])
+    setConfirmandoFaltantes(false)
+    setSubmitPayload(null)
     setError(null)
   }
 
@@ -277,13 +352,101 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     )
   }
 
+  // Diálogo de confirmación por insumos faltantes
+  if (confirmandoFaltantes) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-md rounded-xl bg-card border shadow-lg p-6 space-y-4">
+          <h2 className="text-base font-semibold">Confirmar egreso con insumos faltantes</h2>
+          <p className="text-sm text-muted-foreground">
+            No hay suficiente stock para cubrir toda la solicitud. El egreso se registrará con lo disponible:
+          </p>
+          <ul className="space-y-2">
+            {faltantes.map((f, i) => (
+              <li key={i} className="rounded-md border bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm">
+                <span className="font-medium">{f.insumo}</span>
+                <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+                  <div>Solicitado: <span className="font-medium">{f.solicitado.toLocaleString('es-VE')}</span></div>
+                  <div>Disponible: <span className="font-medium text-foreground">{f.disponible.toLocaleString('es-VE')}</span></div>
+                  <div className="text-amber-700 dark:text-amber-400 font-medium">Falta: {f.falta.toLocaleString('es-VE')}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm">
+            ¿Deseas enviar el egreso con los insumos disponibles y dejar la solicitud como <strong>parcialmente atendida</strong>?
+          </p>
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setConfirmandoFaltantes(false)}
+              className="rounded-md border px-4 py-2 text-sm hover:bg-muted"
+            >
+              Volver al formulario
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setConfirmandoFaltantes(false)
+                if (submitPayload) await submitPayload()
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Sí, enviar con lo disponible
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto">
       <div className="w-full max-w-lg rounded-xl bg-card border shadow-lg p-6 my-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Registrar egreso</h2>
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
-          {/* Insumos a despachar (multi-insumo) */}
+
+          {/* PASO 1 — Solicitud asociada (opcional) */}
+          <div className="space-y-2">
+            <label className={labelCls}>
+              Solicitud asociada <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <select
+              className={inputCls}
+              value={solicitudId}
+              onChange={(e) => seleccionarSolicitud(e.target.value)}
+            >
+              <option value="">Sin solicitud — egreso libre</option>
+              {solicitudesPendientes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.insumo} · {s.cantidad_solicitada.toLocaleString('es-VE')} · {s.solicitante} ({s.estado === 'pendiente' ? 'Pendiente' : 'Parcial'})
+                </option>
+              ))}
+            </select>
+
+            {/* Panel de comparación stock vs solicitud */}
+            {solicitudId && (() => {
+              const sol = solicitudesPendientes.find((s) => s.id === solicitudId)!
+              const stock = stockMap[sol.insumo_id] ?? 0
+              const suficiente = stock >= sol.cantidad_solicitada
+              return (
+                <div className={`rounded-md border px-3 py-2 text-sm space-y-1 ${suficiente ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'}`}>
+                  <p className="font-medium">{sol.insumo}</p>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    <div>Solicitado por <span className="font-medium text-foreground">{sol.solicitante}</span>: <span className="font-medium text-foreground">{sol.cantidad_solicitada.toLocaleString('es-VE')}</span></div>
+                    <div>En inventario: <span className={`font-medium ${suficiente ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>{stock.toLocaleString('es-VE')}</span></div>
+                    {suficiente
+                      ? <div className="text-green-700 dark:text-green-400 font-medium">Hay stock suficiente — insumos autocargados.</div>
+                      : <div className="text-amber-700 dark:text-amber-400 font-medium">Falta: {(sol.cantidad_solicitada - stock).toLocaleString('es-VE')} — se precargó lo disponible.</div>
+                    }
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          {/* PASO 2 — Insumos a despachar */}
           <div className="space-y-2">
             <label className={labelCls}>Insumos a despachar *</label>
             {items.map((it, idx) => (
@@ -358,7 +521,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
             </div>
           )}
 
-          {/* Persona contacto (obligatoria) */}
+          {/* Persona contacto */}
           <div className="space-y-2">
             <label className={labelCls}>Persona contacto (recibe) *</label>
             <div className="flex gap-3">
@@ -441,7 +604,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
             </div>
           )}
 
-          {/* Responsables de entrega (opcional) */}
+          {/* Responsables de entrega */}
           <div className="space-y-2">
             <label className={labelCls}>
               Responsables de entrega <span className="text-muted-foreground font-normal">(opcional)</span>
@@ -464,7 +627,6 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
             )}
 
             <div className="space-y-2 rounded-md bg-muted/40 p-3">
-              {/* Buscar persona existente */}
               <input
                 className={inputCls}
                 placeholder="Buscar responsable registrado…"
@@ -490,8 +652,6 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
                   ))}
                 </ul>
               )}
-
-              {/* Manual */}
               <p className="text-xs text-muted-foreground">O ingrese uno manualmente:</p>
               <div className="grid grid-cols-3 gap-2">
                 <input className={inputCls} placeholder="Nombre" value={respManual.nombre}

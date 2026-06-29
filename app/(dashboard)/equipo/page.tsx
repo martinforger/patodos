@@ -2,8 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { InvitarUsuarioForm } from './invitar-usuario-form'
 import { CrearCentroForm } from '@/app/bienvenida/crear-centro-form'
+import { SolicitudesUnion } from './solicitudes-union'
+import { ToggleVisibilidadCentro } from '@/components/app/toggle-visibilidad-centro'
 
-type Centro = { id: string; nombre: string }
+type Centro = { id: string; nombre: string; es_publico?: boolean }
 type Integrante = {
   id: string
   nombre: string
@@ -11,6 +13,16 @@ type Integrante = {
   correo: string
   rol: string
   activo: boolean
+}
+type Solicitud = {
+  id: string
+  estado: string
+  created_at: string
+  usuario_id: string
+  nombre: string
+  apellido: string
+  correo: string
+  telefono: string | null
 }
 
 const rolLabel: Record<string, string> = {
@@ -27,11 +39,17 @@ export default async function EquipoPage() {
   const { data: centrosRaw } = await supabase.rpc('sp_mis_centros_coordinados')
   const centros = (centrosRaw as Centro[] | null) ?? []
 
-  // Equipo de cada centro coordinado
   const equipos = await Promise.all(
     centros.map(async (c) => {
-      const { data } = await supabase.rpc('sp_listar_equipo', { p_centro_id: c.id })
-      return { centro: c, integrantes: (data as Integrante[] | null) ?? [] }
+      const [{ data: integrantes }, { data: solicitudes }] = await Promise.all([
+        supabase.rpc('sp_listar_equipo', { p_centro_id: c.id }),
+        supabase.rpc('sp_listar_solicitudes_union', { p_centro_id: c.id }),
+      ])
+      return {
+        centro: c,
+        integrantes: (integrantes as Integrante[] | null) ?? [],
+        solicitudes: (solicitudes as Solicitud[] | null) ?? [],
+      }
     }),
   )
 
@@ -57,13 +75,23 @@ export default async function EquipoPage() {
           Aún no coordinas ningún centro. Crea uno arriba o pide que un coordinador te agregue.
         </div>
       ) : (
-        <div className="space-y-8">
-          {equipos.map(({ centro, integrantes }) => (
+        <div className="space-y-10">
+          {equipos.map(({ centro, integrantes, solicitudes }) => (
             <section key={centro.id} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">{centro.nombre}</h2>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">{centro.nombre}</h2>
+                  <ToggleVisibilidadCentro
+                    centroId={centro.id}
+                    esPublico={centro.es_publico ?? false}
+                  />
+                </div>
                 <InvitarUsuarioForm centroId={centro.id} />
               </div>
+
+              {solicitudes.length > 0 && (
+                <SolicitudesUnion centroId={centro.id} solicitudes={solicitudes} />
+              )}
 
               <div className="rounded-lg border overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm">

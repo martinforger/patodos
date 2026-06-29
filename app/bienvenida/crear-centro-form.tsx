@@ -15,22 +15,31 @@ const ESTADOS_VE = [
 ]
 
 type Props = {
-  /** Ruta a la que ir tras crear el centro. Por defecto el panel. */
   redirectTo?: string
-  /** Texto del botón que abre el formulario. */
   label?: string
 }
 
 export function CrearCentroForm({ redirectTo = '/dashboard', label = 'Crear centro de acopio' }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [exitoso, setExitoso] = useState(false)
+  const [esPublico, setEsPublico] = useState(true)
   const router = useRouter()
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<CentroData>({ resolver: zodResolver(centroSchema) })
+  } = useForm<CentroData>({
+    resolver: zodResolver(centroSchema),
+    defaultValues: { es_publico: true },
+  })
+
+  function toggleVisibilidad(valor: boolean) {
+    setEsPublico(valor)
+    setValue('es_publico', valor)
+  }
 
   async function onSubmit(data: CentroData) {
     setError(null)
@@ -42,11 +51,13 @@ export function CrearCentroForm({ redirectTo = '/dashboard', label = 'Crear cent
       p_estado_geo: data.estado_geo,
       p_telefono: data.telefono || undefined,
       p_correo: data.correo || undefined,
+      p_es_publico: data.es_publico,
     })
     if (rpcError) {
       setError(rpcError.message)
       return
     }
+    setExitoso(true)
     router.push(redirectTo)
     router.refresh()
   }
@@ -95,6 +106,34 @@ export function CrearCentroForm({ redirectTo = '/dashboard', label = 'Crear cent
         </Field>
       </div>
 
+      <div className="space-y-1">
+        <label className="text-xs font-medium">Visibilidad del centro</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => toggleVisibilidad(true)}
+            className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm text-left transition-colors ${esPublico ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+          >
+            <span className={`mt-1 h-3 w-3 shrink-0 rounded-full border-2 ${esPublico ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+            <span>
+              <span className="font-medium block">Público</span>
+              <span className="text-xs text-muted-foreground">Aparece en la lista; el coordinador aprueba cada solicitud</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleVisibilidad(false)}
+            className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm text-left transition-colors ${!esPublico ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+          >
+            <span className={`mt-1 h-3 w-3 shrink-0 rounded-full border-2 ${!esPublico ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+            <span>
+              <span className="font-medium block">Privado</span>
+              <span className="text-xs text-muted-foreground">Solo por invitación del coordinador</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
       {error && (
         <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -103,10 +142,10 @@ export function CrearCentroForm({ redirectTo = '/dashboard', label = 'Crear cent
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || exitoso}
         className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
       >
-        {isSubmitting ? 'Creando…' : 'Crear y entrar como coordinador'}
+        {exitoso ? 'Centro creado, redirigiendo…' : isSubmitting ? 'Creando…' : 'Crear y entrar como coordinador'}
       </button>
     </form>
   )

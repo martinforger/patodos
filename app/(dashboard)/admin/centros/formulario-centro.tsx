@@ -17,14 +17,24 @@ const ESTADOS_VE = [
 export function FormularioCentro() {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [esPublico, setEsPublico] = useState(true)
   const router = useRouter()
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<CentroData>({ resolver: zodResolver(centroSchema) })
+  } = useForm<CentroData>({
+    resolver: zodResolver(centroSchema),
+    defaultValues: { es_publico: true },
+  })
+
+  function toggleVisibilidad(valor: boolean) {
+    setEsPublico(valor)
+    setValue('es_publico', valor)
+  }
 
   async function onSubmit(data: CentroData) {
     setError(null)
@@ -36,12 +46,14 @@ export function FormularioCentro() {
       p_estado_geo: data.estado_geo,
       p_telefono: data.telefono || undefined,
       p_correo: data.correo || undefined,
+      p_es_publico: data.es_publico,
     })
     if (rpcError) {
       setError(rpcError.message)
       return
     }
     reset()
+    setEsPublico(true)
     setAbierto(false)
     router.refresh()
   }
@@ -95,6 +107,34 @@ export function FormularioCentro() {
             </Field>
           </div>
 
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Visibilidad</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => toggleVisibilidad(true)}
+                className={`flex items-start gap-2 rounded-md border px-3 py-2.5 text-sm text-left transition-colors ${esPublico ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+              >
+                <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 ${esPublico ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+                <span>
+                  <span className="font-medium block">Público</span>
+                  <span className="text-xs text-muted-foreground">Cualquiera puede solicitar unirse; el coordinador aprueba</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleVisibilidad(false)}
+                className={`flex items-start gap-2 rounded-md border px-3 py-2.5 text-sm text-left transition-colors ${!esPublico ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+              >
+                <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 ${!esPublico ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+                <span>
+                  <span className="font-medium block">Privado</span>
+                  <span className="text-xs text-muted-foreground">Solo por invitación directa del coordinador</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
           {error && (
             <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
@@ -104,7 +144,7 @@ export function FormularioCentro() {
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
-              onClick={() => { setAbierto(false); reset(); setError(null) }}
+              onClick={() => { setAbierto(false); reset(); setEsPublico(true); setError(null) }}
               className="rounded-md border px-4 py-2 text-sm hover:bg-muted"
             >
               Cancelar
