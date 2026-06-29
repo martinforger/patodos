@@ -768,7 +768,7 @@ export type Database = {
         Returns: Json
       }
       sp_marcar_comida: {
-        Args: { p_asistencia_id: string; p_numero_comida: number; p_comio: boolean }
+        Args: { p_asistencia_id: string; p_numero_comida: number; p_comio: boolean }  // number → integer en DB
         Returns: Json
       }
       sp_registrar_asistencia_voluntario: {

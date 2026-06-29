@@ -67,7 +67,7 @@ export default async function VoluntariosPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <QrAsistencia centroId={perfil.centro_id} />
-          <FormularioVoluntario />
+          <FormularioVoluntario centroId={perfil.centro_id} />
         </div>
       </div>
 

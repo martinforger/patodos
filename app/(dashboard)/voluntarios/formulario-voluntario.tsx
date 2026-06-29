@@ -5,9 +5,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { voluntarioSchema, type VoluntarioData } from '@/lib/validations/voluntarios'
-import { createClient } from '@/lib/supabase/client'
+import { registrarVoluntario } from './actions'
 
-export function FormularioVoluntario() {
+type Props = {
+  centroId: string
+}
+
+export function FormularioVoluntario({ centroId }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -21,23 +25,11 @@ export function FormularioVoluntario() {
 
   async function onSubmit(data: VoluntarioData) {
     setError(null)
-    const supabase = createClient()
-    const { data: resultado, error: rpcError } = await supabase.rpc('sp_registrar_voluntario', {
-      p_nombres:             data.nombres,
-      p_apellidos:           data.apellidos,
-      p_nacionalidad:        data.nacionalidad,
-      p_cedula_numero:       data.cedula_numero,
-      p_fecha_nacimiento:    data.fecha_nacimiento || undefined,
-      p_telefono:            data.telefono,
-      p_telefono_emergencia: data.telefono_emergencia || undefined,
-      p_zona:                data.zona || undefined,
-    })
-
-    if (rpcError) { setError(rpcError.message); return }
-
-    const res = resultado as { ok: boolean; error?: string }
-    if (!res?.ok) { setError(res?.error ?? 'Error al registrar'); return }
-
+    const resultado = await registrarVoluntario(centroId, data)
+    if (!resultado.ok) {
+      setError(resultado.error ?? 'Error al registrar')
+      return
+    }
     reset()
     setAbierto(false)
     router.refresh()

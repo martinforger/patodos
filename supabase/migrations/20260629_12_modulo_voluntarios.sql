@@ -281,7 +281,7 @@ GRANT EXECUTE ON FUNCTION sp_listar_voluntarios(uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION sp_marcar_comida(
   p_asistencia_id  uuid,
-  p_numero_comida  smallint,
+  p_numero_comida  integer,
   p_comio          boolean
 )
 RETURNS jsonb
@@ -330,8 +330,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION sp_marcar_comida(uuid, smallint, boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION sp_marcar_comida(uuid, smallint, boolean) TO authenticated;
+REVOKE ALL ON FUNCTION sp_marcar_comida(uuid, integer, boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION sp_marcar_comida(uuid, integer, boolean) TO authenticated;
 
 -- ──────────────────────────────────────────────────────────────
 -- SP: sp_centro_nombre_publico (PÚBLICO)
