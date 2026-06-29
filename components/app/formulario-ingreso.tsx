@@ -7,7 +7,11 @@ import { useRouter } from 'next/navigation'
 import { ingresoSchema, personaSchema, type IngresoData, type PersonaData } from '@/lib/validations/ingresos'
 import { createClient } from '@/lib/supabase/client'
 
-type Insumo = { id: string; nombre: string; categoria: string }
+type Insumo = { id: string; nombre: string; categoria: string; unidad_medida?: string | null }
+
+const UNIDADES_MEDIDA = [
+  'kg', 'g', 'L', 'mL', 'unidades', 'cajas', 'bolsas', 'paquetes', 'paletas', 'sacos',
+]
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 
@@ -45,6 +49,8 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
   const [modoNuevoInsumo, setModoNuevoInsumo] = useState(false)
   const [nuevoInsumoNombre, setNuevoInsumoNombre] = useState('')
   const [nuevoInsumoCategoria, setNuevoInsumoCategoria] = useState('')
+  const [nuevoInsumoUnidad, setNuevoInsumoUnidad] = useState('')
+  const [nuevoInsumoUnidadPersonalizada, setNuevoInsumoUnidadPersonalizada] = useState('')
   const [creandoInsumo, setCreandoInsumo] = useState(false)
 
   // Donante
@@ -118,6 +124,8 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     setModoNuevoInsumo(false)
     setNuevoInsumoNombre('')
     setNuevoInsumoCategoria('')
+    setNuevoInsumoUnidad('')
+    setNuevoInsumoUnidadPersonalizada('')
   }
 
   async function confirmarNuevoInsumo() {
@@ -128,9 +136,13 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     setCreandoInsumo(true)
     setError(null)
     const supabase = createClient()
+    const unidadFinal = nuevoInsumoUnidad === '__otra__'
+      ? nuevoInsumoUnidadPersonalizada.trim()
+      : nuevoInsumoUnidad
     const { data, error: rpcError } = await supabase.rpc('sp_crear_insumo', {
       p_nombre: nuevoInsumoNombre.trim(),
       p_categoria_id: nuevoInsumoCategoria,
+      ...(unidadFinal ? { p_unidad_medida: unidadFinal } : {}),
     })
     setCreandoInsumo(false)
     if (rpcError) { setError(rpcError.message); return }
@@ -269,7 +281,14 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
             {insumoSeleccionado ? (
               <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
                 <div>
-                  <p className="text-sm font-medium">{insumoSeleccionado.nombre}</p>
+                  <p className="text-sm font-medium">
+                    {insumoSeleccionado.nombre}
+                    {insumoSeleccionado.unidad_medida && (
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        ({insumoSeleccionado.unidad_medida})
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {insumoSeleccionado.categoria}
                   </p>
@@ -297,18 +316,45 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                     autoFocus
                   />
                 </Field>
-                <Field label="Categoría *">
-                  <select
-                    className={inputCls}
-                    value={nuevoInsumoCategoria}
-                    onChange={(e) => setNuevoInsumoCategoria(e.target.value)}
-                  >
-                    <option value="">Selecciona…</option>
-                    {categorias.map((c) => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
-                    ))}
-                  </select>
-                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Unidad de medida (opcional)">
+                    <select
+                      className={inputCls}
+                      value={nuevoInsumoUnidad}
+                      onChange={(e) => {
+                        setNuevoInsumoUnidad(e.target.value)
+                        if (e.target.value !== '__otra__') setNuevoInsumoUnidadPersonalizada('')
+                      }}
+                    >
+                      <option value="">Sin unidad</option>
+                      {UNIDADES_MEDIDA.map((u) => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                      <option value="__otra__">Otra…</option>
+                    </select>
+                    {nuevoInsumoUnidad === '__otra__' && (
+                      <input
+                        className={`${inputCls} mt-1.5`}
+                        placeholder="Escribe la unidad…"
+                        value={nuevoInsumoUnidadPersonalizada}
+                        onChange={(e) => setNuevoInsumoUnidadPersonalizada(e.target.value)}
+                        autoFocus
+                      />
+                    )}
+                  </Field>
+                  <Field label="Categoría *">
+                    <select
+                      className={inputCls}
+                      value={nuevoInsumoCategoria}
+                      onChange={(e) => setNuevoInsumoCategoria(e.target.value)}
+                    >
+                      <option value="">Selecciona…</option>
+                      {categorias.map((c) => (
+                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
                 <div className="flex gap-2 justify-end">
                   <button
                     type="button"
@@ -346,6 +392,9 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                           className="w-full px-3 py-2 text-left hover:bg-muted/50"
                         >
                           <span className="font-medium">{i.nombre}</span>
+                          {i.unidad_medida && (
+                            <span className="ml-1 text-muted-foreground text-xs">({i.unidad_medida})</span>
+                          )}
                           <span className="ml-2 text-muted-foreground text-xs">
                             {i.categoria}
                           </span>

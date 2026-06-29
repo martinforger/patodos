@@ -200,6 +200,7 @@ export type Database = {
           descripcion: string | null
           id: string
           nombre: string
+          unidad_medida: string | null
           updated_at: string
         }
         Insert: {
@@ -209,6 +210,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre: string
+          unidad_medida?: string | null
           updated_at?: string
         }
         Update: {
@@ -218,6 +220,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre?: string
+          unidad_medida?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -682,7 +685,7 @@ export type Database = {
         Returns: Json
       }
       sp_crear_insumo: {
-        Args: { p_categoria_id: string; p_nombre: string }
+        Args: { p_categoria_id: string; p_nombre: string; p_unidad_medida?: string }
         Returns: Json
       }
       sp_crear_persona: {
