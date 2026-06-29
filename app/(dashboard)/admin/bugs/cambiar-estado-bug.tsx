@@ -3,6 +3,13 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ChevronDown } from 'lucide-react'
 
 type Estado = 'por_revisar' | 'en_proceso' | 'solucionado'
 
@@ -20,13 +27,12 @@ const colores: Record<Estado, string> = {
 
 export function CambiarEstadoBug({ bugId, estadoActual }: { bugId: string; estadoActual: Estado }) {
   const [estado, setEstado] = useState<Estado>(estadoActual)
-  const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   async function cambiar(nuevoEstado: Estado) {
-    if (nuevoEstado === estado) { setAbierto(false); return }
+    if (nuevoEstado === estado) return
     setError(null)
     const supabase = createClient()
     const { error: err } = await supabase.rpc('sp_actualizar_estado_bug', {
@@ -35,40 +41,33 @@ export function CambiarEstadoBug({ bugId, estadoActual }: { bugId: string; estad
     })
     if (err) { setError('Error al actualizar'); return }
     setEstado(nuevoEstado)
-    setAbierto(false)
     startTransition(() => router.refresh())
   }
 
   return (
-    <div className="relative inline-block">
-      <button
-        onClick={() => setAbierto(!abierto)}
-        disabled={isPending}
-        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${colores[estado]} hover:opacity-80`}
-      >
-        {etiquetas[estado]}
-        <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-        </svg>
-      </button>
-
-      {abierto && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setAbierto(false)} />
-          <div className="absolute left-0 top-full z-20 mt-1 w-36 rounded-md border bg-popover shadow-md">
-            {(Object.keys(etiquetas) as Estado[]).map((e) => (
-              <button
-                key={e}
-                onClick={() => cambiar(e)}
-                className={`flex w-full items-center px-3 py-2 text-xs transition-colors hover:bg-muted ${e === estado ? 'font-semibold' : ''}`}
-              >
-                {etiquetas[e]}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
+    <div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            disabled={isPending}
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${colores[estado]} hover:opacity-80 disabled:opacity-50`}
+          >
+            {etiquetas[estado]}
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {(Object.keys(etiquetas) as Estado[]).map((e) => (
+            <DropdownMenuItem
+              key={e}
+              onClick={() => cambiar(e)}
+              className={e === estado ? 'font-semibold' : ''}
+            >
+              {etiquetas[e]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>
   )
