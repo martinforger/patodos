@@ -18,7 +18,9 @@ import {
   FileBarChart,
   LayoutGrid,
   HeartHandshake,
+  Bug,
 } from 'lucide-react'
+import { FormularioBug } from '@/components/app/formulario-bug'
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard, id: 'tour-panel' },
@@ -38,6 +40,7 @@ const adminItems = [
   { href: '/admin/panel', label: 'Panel general', icon: LayoutGrid },
   { href: '/admin/centros', label: 'Centros', icon: Building2 },
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
+  { href: '/admin/bugs', label: 'Bugs reportados', icon: Bug },
 ]
 
 export function Sidebar({ rol }: { rol: string }) {
@@ -99,7 +102,8 @@ export function Sidebar({ rol }: { rol: string }) {
         )}
       </nav>
 
-      <div className="border-t px-2 py-3">
+      <div className="border-t px-2 py-3 space-y-0.5">
+        <FormularioBug />
         <button
           onClick={cerrarSesion}
           className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
