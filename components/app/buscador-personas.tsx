@@ -13,7 +13,7 @@ type Persona = {
   observaciones: string | null
 }
 
-export function BuscadorPersonas() {
+export function BuscadorPersonas({ centroId }: { centroId: string }) {
   const [query, setQuery] = useState('')
   const [resultados, setResultados] = useState<Persona[]>([])
   const [buscando, setBuscando] = useState(false)
@@ -25,7 +25,7 @@ export function BuscadorPersonas() {
     setBuscando(true)
     setBuscado(false)
     const supabase = createClient()
-    const { data } = await supabase.rpc('sp_buscar_persona', { p_termino: query.trim() })
+    const { data } = await supabase.rpc('sp_buscar_persona', { p_termino: query.trim(), p_centro_id: centroId })
     setResultados((data as Persona[]) ?? [])
     setBuscando(false)
     setBuscado(true)
@@ -91,7 +91,7 @@ export function BuscadorPersonas() {
 
       {!buscado && (
         <p className="text-sm text-muted-foreground">
-          Ingresa un nombre, teléfono o cédula para buscar personas registradas en el sistema.
+          Ingresa un nombre, teléfono o cédula para buscar personas registradas en este centro.
         </p>
       )}
     </div>

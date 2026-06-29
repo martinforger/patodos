@@ -26,7 +26,7 @@ export default async function PersonasPage() {
         </p>
       </div>
 
-      <BuscadorPersonas />
+      <BuscadorPersonas centroId={perfil.centro_id} />
     </div>
   )
 }

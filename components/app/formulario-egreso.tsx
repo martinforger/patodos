@@ -81,7 +81,7 @@ export function FormularioEgreso({
       if (busquedaResp.length < 2) { setResultadosResp([]); setBuscandoResp(false); return }
       setBuscandoResp(true)
       const supabase = createClient()
-      const { data } = await supabase.rpc('sp_buscar_persona', { p_termino: busquedaResp })
+      const { data } = await supabase.rpc('sp_buscar_persona', { p_termino: busquedaResp, p_centro_id: centroId })
       if (!cancelado) {
         setResultadosResp((data as Persona[]) ?? [])
         setBuscandoResp(false)
@@ -167,6 +167,7 @@ export function FormularioEgreso({
   async function crearPersona(data: PersonaData): Promise<string | null> {
     const supabase = createClient()
     const { data: res, error } = await supabase.rpc('sp_crear_persona', {
+      p_centro_id: centroId,
       p_nombre: data.nombre, p_apellido: data.apellido, p_telefono: data.telefono,
       p_cedula: data.cedula || undefined, p_correo: data.correo || undefined,
       p_observaciones: data.observaciones || undefined,
@@ -178,6 +179,7 @@ export function FormularioEgreso({
   async function crearDestino(data: DestinoData): Promise<string | null> {
     const supabase = createClient()
     const { data: res, error } = await supabase.rpc('sp_crear_destino', {
+      p_centro_id: centroId,
       p_nombre: data.nombre, p_direccion: data.direccion, p_municipio: data.municipio,
       p_estado_geo: data.estado_geo, p_referencia: data.referencia || undefined,
     })
@@ -505,6 +507,7 @@ export function FormularioEgreso({
             {contactoModo === 'existente' && (
               <div className="rounded-md bg-muted/40 p-3">
                 <BuscadorPersonaInline
+                  centroId={centroId}
                   seleccionado={contactoSeleccionado}
                   onSelect={(p) => setContactoSeleccionado(p)}
                   onCambiar={() => setContactoSeleccionado(null)}

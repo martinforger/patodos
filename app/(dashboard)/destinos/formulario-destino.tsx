@@ -17,7 +17,7 @@ function traducirError(msg: string): string {
   return msg
 }
 
-export function FormularioDestino() {
+export function FormularioDestino({ centroId }: { centroId: string }) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -31,6 +31,7 @@ export function FormularioDestino() {
     setError(null)
     const supabase = createClient()
     const { error: rpcError } = await supabase.rpc('sp_crear_destino', {
+      p_centro_id: centroId,
       p_nombre: data.nombre, p_direccion: data.direccion,
       p_municipio: data.municipio, p_estado_geo: data.estado_geo,
       p_referencia: data.referencia || undefined,

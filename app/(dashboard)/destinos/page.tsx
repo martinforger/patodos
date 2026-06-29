@@ -2,6 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { FormularioDestino } from './formulario-destino'
 
+type Perfil = {
+  usuario_id: string
+  centro_id: string
+  centro: string
+  rol: string
+}
+
 type Destino = {
   id: string
   nombre: string
@@ -11,19 +18,22 @@ type Destino = {
   referencia: string | null
 }
 
-async function getDestinos(): Promise<Destino[]> {
+async function getDestinos(centroId: string): Promise<Destino[]> {
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('sp_listar_destinos')
+  const { data, error } = await supabase.rpc('sp_listar_destinos', { p_centro_id: centroId })
   if (error) throw new Error(error.message)
   return (data as Destino[]) ?? []
 }
 
 export default async function DestinosPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const destinos = await getDestinos()
+  const { data: perfilRaw, error: perfilError } = await supabase.rpc('sp_mi_perfil')
+  if (perfilError || !perfilRaw) redirect('/dashboard')
+
+  const perfil = perfilRaw as Perfil
+
+  const destinos = await getDestinos(perfil.centro_id)
 
   return (
     <div>
@@ -31,10 +41,10 @@ export default async function DestinosPage() {
         <div>
           <h1 className="text-2xl font-bold">Destinos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Lugares a donde se despachan los egresos.
+            {perfil.centro} · Lugares a donde se despachan los egresos.
           </p>
         </div>
-        <FormularioDestino />
+        <FormularioDestino centroId={perfil.centro_id} />
       </div>
 
       <div className="rounded-lg border overflow-hidden overflow-x-auto">

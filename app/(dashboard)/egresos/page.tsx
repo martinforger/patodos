@@ -46,7 +46,7 @@ export default async function EgresosPage() {
 
   const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos')
   const { data: insumos } = await supabase.rpc('sp_listar_insumos', { p_categoria_id: undefined })
-  const { data: destinos } = await supabase.rpc('sp_listar_destinos')
+  const { data: destinos } = await supabase.rpc('sp_listar_destinos', { p_centro_id: perfil.centro_id })
   const { data: solicitudesPendientes } = await supabase.rpc('sp_listar_solicitudes_pendientes', {
     p_centro_id: perfil.centro_id,
     p_insumo_id: undefined,

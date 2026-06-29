@@ -13,6 +13,7 @@ type Persona = {
 }
 
 type Props = {
+  centroId: string
   seleccionado: Persona | null
   onSelect: (p: Persona) => void
   onCambiar: () => void
@@ -21,6 +22,7 @@ type Props = {
 }
 
 export function BuscadorPersonaInline({
+  centroId,
   seleccionado,
   onSelect,
   onCambiar,
@@ -41,7 +43,7 @@ export function BuscadorPersonaInline({
       }
       setBuscando(true)
       const supabase = createClient()
-      const { data } = await supabase.rpc('sp_buscar_persona', { p_termino: busqueda })
+      const { data } = await supabase.rpc('sp_buscar_persona', { p_termino: busqueda, p_centro_id: centroId })
       if (!cancelado) {
         setResultados((data as Persona[]) ?? [])
         setBuscando(false)

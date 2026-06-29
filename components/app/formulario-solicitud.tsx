@@ -56,6 +56,7 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
   async function crearPersona(data: PersonaData): Promise<string | null> {
     const supabase = createClient()
     const { data: res, error } = await supabase.rpc('sp_crear_persona', {
+      p_centro_id: centroId,
       p_nombre: data.nombre, p_apellido: data.apellido, p_telefono: data.telefono,
       p_cedula: data.cedula || undefined, p_correo: data.correo || undefined,
       p_observaciones: data.observaciones || undefined,
@@ -181,6 +182,7 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
             {solicitanteModo === 'existente' && (
               <div className="rounded-md bg-muted/40 p-3">
                 <BuscadorPersonaInline
+                  centroId={centroId}
                   seleccionado={solicitanteSeleccionado}
                   onSelect={(p) => setSolicitanteSeleccionado(p)}
                   onCambiar={() => setSolicitanteSeleccionado(null)}
