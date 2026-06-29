@@ -20,6 +20,7 @@ import {
   FileBarChart,
   LayoutGrid,
   Menu,
+  HeartHandshake,
 } from 'lucide-react'
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
   { href: '/personas', label: 'Personas', icon: Users },
   { href: '/destinos', label: 'Destinos', icon: MapPin },
   { href: '/equipo', label: 'Equipo', icon: UserPlus },
+  { href: '/voluntarios', label: 'Voluntarios', icon: HeartHandshake },
 ]
 
 const adminItems = [

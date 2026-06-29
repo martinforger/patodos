@@ -77,6 +77,86 @@ export type Database = {
         }
         Relationships: []
       }
+      asistencia_voluntario: {
+        Row: {
+          centro_id: string
+          created_at: string
+          fecha: string
+          hora_checkin: string
+          id: string
+          voluntario_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          fecha?: string
+          hora_checkin?: string
+          id?: string
+          voluntario_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          fecha?: string
+          hora_checkin?: string
+          id?: string
+          voluntario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencia_voluntario_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_voluntario_voluntario_id_fkey"
+            columns: ["voluntario_id"]
+            isOneToOne: false
+            referencedRelation: "voluntario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comida_voluntario: {
+        Row: {
+          asistencia_id: string
+          comio: boolean
+          id: string
+          marcado_at: string
+          marcado_por: string | null
+          numero_comida: number
+          updated_at: string
+        }
+        Insert: {
+          asistencia_id: string
+          comio?: boolean
+          id?: string
+          marcado_at?: string
+          marcado_por?: string | null
+          numero_comida: number
+          updated_at?: string
+        }
+        Update: {
+          asistencia_id?: string
+          comio?: boolean
+          id?: string
+          marcado_at?: string
+          marcado_por?: string | null
+          numero_comida?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comida_voluntario_asistencia_id_fkey"
+            columns: ["asistencia_id"]
+            isOneToOne: false
+            referencedRelation: "asistencia_voluntario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       destino: {
         Row: {
           activo: boolean
@@ -618,11 +698,96 @@ export type Database = {
           },
         ]
       }
+      voluntario: {
+        Row: {
+          activo: boolean
+          apellidos: string
+          cedula_numero: string
+          centro_id: string
+          created_at: string
+          fecha_nacimiento: string | null
+          id: string
+          nacionalidad: string
+          nombres: string
+          telefono: string
+          telefono_emergencia: string | null
+          updated_at: string
+          zona: string | null
+        }
+        Insert: {
+          activo?: boolean
+          apellidos: string
+          cedula_numero: string
+          centro_id: string
+          created_at?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nacionalidad: string
+          nombres: string
+          telefono: string
+          telefono_emergencia?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Update: {
+          activo?: boolean
+          apellidos?: string
+          cedula_numero?: string
+          centro_id?: string
+          created_at?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nacionalidad?: string
+          nombres?: string
+          telefono?: string
+          telefono_emergencia?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voluntario_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      sp_centro_nombre_publico: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
+      sp_listar_voluntarios: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
+      sp_marcar_comida: {
+        Args: { p_asistencia_id: string; p_numero_comida: number; p_comio: boolean }
+        Returns: Json
+      }
+      sp_registrar_asistencia_voluntario: {
+        Args: { p_centro_id: string; p_nacionalidad: string; p_cedula_numero: string }
+        Returns: Json
+      }
+      sp_registrar_voluntario: {
+        Args: {
+          p_nombres: string
+          p_apellidos: string
+          p_nacionalidad: string
+          p_cedula_numero: string
+          p_fecha_nacimiento?: string
+          p_telefono?: string
+          p_telefono_emergencia?: string
+          p_zona?: string
+        }
+        Returns: Json
+      }
       fn_centros_del_usuario: { Args: never; Returns: string[] }
       fn_es_admin: { Args: never; Returns: boolean }
       fn_es_coordinador: { Args: { p_centro_id: string }; Returns: boolean }

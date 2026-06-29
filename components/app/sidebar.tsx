@@ -17,6 +17,7 @@ import {
   History,
   FileBarChart,
   LayoutGrid,
+  HeartHandshake,
 } from 'lucide-react'
 
 const navItems = [
@@ -30,6 +31,7 @@ const navItems = [
   { href: '/personas', label: 'Personas', icon: Users, id: 'tour-personas' },
   { href: '/destinos', label: 'Destinos', icon: MapPin, id: 'tour-destinos' },
   { href: '/equipo', label: 'Equipo', icon: UserPlus, id: 'tour-equipo' },
+  { href: '/voluntarios', label: 'Voluntarios', icon: HeartHandshake, id: 'tour-voluntarios' },
 ]
 
 const adminItems = [

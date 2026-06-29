@@ -24,14 +24,18 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  const estaEnAuth = pathname.startsWith('/login') || pathname.startsWith('/registro')
+  const esRutaPublica =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/registro') ||
+    pathname.startsWith('/asistencia')
 
-  if (!user && !estaEnAuth) {
+  if (!user && !esRutaPublica) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
+  const estaEnAuth = pathname.startsWith('/login') || pathname.startsWith('/registro')
   if (user && estaEnAuth) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
