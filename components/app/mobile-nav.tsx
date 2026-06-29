@@ -41,7 +41,7 @@ const adminItems = [
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
 ]
 
-export function MobileNav() {
+export function MobileNav({ rol }: { rol: string }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -87,25 +87,29 @@ export function MobileNav() {
               </Link>
             ))}
 
-            <div className="pt-3 pb-1 px-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Administración</p>
-            </div>
+            {rol === 'administrador_sistema' && (
+              <>
+                <div className="pt-3 pb-1 px-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Administración</p>
+                </div>
 
-            {adminItems.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
-                  pathname.startsWith(href)
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </Link>
-            ))}
+                {adminItems.map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+                      pathname.startsWith(href)
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {label}
+                  </Link>
+                ))}
+              </>
+            )}
           </nav>
 
           <div className="border-t px-2 py-3">
