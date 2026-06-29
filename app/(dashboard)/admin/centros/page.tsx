@@ -32,7 +32,7 @@ export default async function CentrosPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Centros de acopio</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">HU-01 · Solo administrador del sistema</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Solo administrador del sistema</p>
         </div>
         <FormularioCentro />
       </div>
