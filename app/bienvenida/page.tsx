@@ -25,7 +25,7 @@ export default async function BienvenidaPage() {
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl space-y-6">
+      <div className="w-full max-w-5xl space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Aún no estás en ningún centro</h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -50,9 +50,9 @@ export default async function BienvenidaPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           {/* Opción 1: unirse a un centro público */}
-          <div className="rounded-xl border bg-card p-5 space-y-3 md:col-span-1">
+          <div className="rounded-xl border bg-card p-5 space-y-3">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">1</span>
               <h2 className="font-semibold">Unirte a un centro público</h2>
