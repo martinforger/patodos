@@ -9,6 +9,7 @@ import {
   ArrowUpFromLine,
   ClipboardList,
   Users,
+  UserPlus,
   MapPin,
   LayoutDashboard,
   Building2,
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/reportes', label: 'Reportes', icon: FileBarChart, id: 'tour-reportes' },
   { href: '/personas', label: 'Personas', icon: Users, id: 'tour-personas' },
   { href: '/destinos', label: 'Destinos', icon: MapPin, id: 'tour-destinos' },
+  { href: '/equipo', label: 'Equipo', icon: UserPlus, id: 'tour-equipo' },
 ]
 
 const adminItems = [

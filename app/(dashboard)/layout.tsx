@@ -9,6 +9,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
+  // Gate de onboarding: si el usuario no está asignado a ningún centro
+  // (y no es admin, que siempre tiene centro) lo mandamos a /bienvenida.
+  const { data: perfil } = await supabase.rpc('sp_mi_perfil')
+  if (!perfil) redirect('/bienvenida')
+
   return (
     <AppTour>
       <div className="flex h-screen overflow-hidden">

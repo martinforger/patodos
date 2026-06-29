@@ -622,6 +622,7 @@ export type Database = {
     Functions: {
       fn_centros_del_usuario: { Args: never; Returns: string[] }
       fn_es_admin: { Args: never; Returns: boolean }
+      fn_es_coordinador: { Args: { p_centro_id: string }; Returns: boolean }
       sp_anular_movimiento: {
         Args: { p_motivo: string; p_movimiento_id: string }
         Returns: Json
@@ -646,6 +647,17 @@ export type Database = {
       sp_buscar_persona: { Args: { p_termino: string }; Returns: Json }
       sp_cancelar_solicitud: {
         Args: { p_motivo?: string; p_solicitud_id: string }
+        Returns: Json
+      }
+      sp_crear_centro_acopio: {
+        Args: {
+          p_correo?: string
+          p_direccion: string
+          p_estado_geo: string
+          p_municipio: string
+          p_nombre: string
+          p_telefono?: string
+        }
         Returns: Json
       }
       sp_crear_destino: {
@@ -685,6 +697,14 @@ export type Database = {
         Returns: Json
       }
       sp_inventario_centro: { Args: { p_centro_id: string }; Returns: Json }
+      sp_invitar_usuario_centro: {
+        Args: {
+          p_centro_id: string
+          p_correo: string
+          p_rol: Database["public"]["Enums"]["rol_usuario"]
+        }
+        Returns: Json
+      }
       sp_listar_categorias_insumos: { Args: never; Returns: Json }
       sp_listar_centros: { Args: never; Returns: Json }
       sp_listar_destinos: { Args: never; Returns: Json }
@@ -692,6 +712,7 @@ export type Database = {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
         Returns: Json
       }
+      sp_listar_equipo: { Args: { p_centro_id: string }; Returns: Json }
       sp_listar_ingresos: {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
         Returns: Json
@@ -713,6 +734,7 @@ export type Database = {
       sp_listar_usuarios: { Args: never; Returns: Json }
       sp_listar_usuarios_centros: { Args: never; Returns: Json }
       sp_mi_perfil: { Args: never; Returns: Json }
+      sp_mis_centros_coordinados: { Args: never; Returns: Json }
       sp_registrar_centro_acopio: {
         Args: {
           p_correo?: string
