@@ -12,32 +12,21 @@ export async function registrarVoluntario(centroId: string, formData: unknown) {
   const d = parsed.data
   const supabase = await createClient()
 
-  // Verificar cédula duplicada en el mismo centro
-  const { data: existe } = await supabase
-    .from('voluntario')
-    .select('id')
-    .eq('centro_id', centroId)
-    .eq('nacionalidad', d.nacionalidad)
-    .eq('cedula_numero', d.cedula_numero)
-    .eq('activo', true)
-    .maybeSingle()
-
-  if (existe) {
-    return { ok: false, error: 'Ya existe un voluntario con esa cédula en este centro' }
-  }
-
-  const { error } = await supabase.from('voluntario').insert({
-    centro_id:           centroId,
-    nombres:             d.nombres,
-    apellidos:           d.apellidos,
-    nacionalidad:        d.nacionalidad,
-    cedula_numero:       d.cedula_numero,
-    fecha_nacimiento:    d.fecha_nacimiento || null,
-    telefono:            d.telefono,
-    telefono_emergencia: d.telefono_emergencia || null,
-    zona:                d.zona || null,
+  const { data, error } = await supabase.rpc('sp_registrar_voluntario', {
+    p_centro_id:           centroId,
+    p_nombres:             d.nombres,
+    p_apellidos:           d.apellidos,
+    p_nacionalidad:        d.nacionalidad,
+    p_cedula_numero:       d.cedula_numero,
+    p_fecha_nacimiento:    d.fecha_nacimiento || null,
+    p_telefono:            d.telefono,
+    p_telefono_emergencia: d.telefono_emergencia || null,
+    p_zona:                d.zona || null,
   })
 
   if (error) return { ok: false, error: error.message }
+
+  const res = data as { ok: boolean; error?: string }
+  if (!res.ok) return { ok: false, error: res.error ?? 'Error al registrar' }
   return { ok: true }
 }
