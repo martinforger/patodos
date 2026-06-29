@@ -14,12 +14,12 @@ import {
 import type { PersonaData } from '@/lib/validations/ingresos'
 import { createClient } from '@/lib/supabase/client'
 
-type Insumo = { id: string; nombre: string; unidad_medida: string; categoria: string }
+type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 type Destino = { id: string; nombre: string; municipio: string; estado_geo: string }
 type Responsable = { persona_id: string | null; nombre: string; apellido: string; telefono: string }
-type SolicitudPendiente = { id: string; insumo: string; unidad_medida: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }
+type SolicitudPendiente = { id: string; insumo: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }
 
 const inputCls = 'w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 const labelCls = 'text-sm font-medium'
@@ -32,6 +32,17 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
+}
+
+// Traduce mensajes crudos de Postgres a algo legible para el voluntario.
+function traducirErrorEgreso(mensaje: string): string {
+  if (mensaje.includes('persona_contacto_id')) {
+    return 'Debes indicar una persona de contacto que recibe el egreso.'
+  }
+  if (/stock|inventario|insuficiente|cantidad/i.test(mensaje)) {
+    return 'No hay stock suficiente de este insumo para registrar el egreso.'
+  }
+  return mensaje
 }
 
 async function buscarPersona(termino: string): Promise<Persona[]> {
@@ -78,7 +89,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     defaultValues: {
       fecha: new Date().toISOString().slice(0, 10),
       destino_modo: 'existente',
-      contacto_modo: 'ninguno',
+      contacto_modo: 'existente',
     },
   })
 
@@ -94,12 +105,10 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
 
   const destinoModo = watch('destino_modo')
   const contactoModo = watch('contacto_modo')
-  const insumoId = watch('insumo_id')
 
   const insumosFiltrados = categoriaSeleccionada
     ? insumos.filter((i) => i.categoria === categorias.find((c) => c.id === categoriaSeleccionada)?.nombre)
     : insumos
-  const insumoActual = insumos.find((i) => i.id === insumoId)
 
   useEffect(() => {
     if (contactoModo !== 'existente') {
@@ -179,19 +188,20 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
       if (!destinoId) { setError('Error al registrar el destino'); return }
     }
 
-    // Resolver persona contacto
+    // Resolver persona contacto (obligatoria: quien recibe el egreso)
     let contactoId: string | null = null
     if (data.contacto_modo === 'existente') {
-      if (!contactoSeleccionado) { setError('Seleccione una persona contacto'); return }
+      if (!contactoSeleccionado) { setError('Seleccione la persona de contacto que recibe'); return }
       contactoId = contactoSeleccionado.id
-    } else if (data.contacto_modo === 'nuevo') {
+    } else {
       const valid = await triggerContacto()
-      if (!valid) { setError('Complete los datos de la persona contacto'); return }
+      if (!valid) { setError('Complete los datos de la persona de contacto'); return }
       const parsed = personaSchema.safeParse(getValuesContacto())
-      if (!parsed.success) { setError('Datos de la persona contacto inválidos'); return }
+      if (!parsed.success) { setError('Datos de la persona de contacto inválidos'); return }
       contactoId = await crearPersona(parsed.data)
-      if (!contactoId) { setError('Error al registrar la persona contacto'); return }
+      if (!contactoId) { setError('Error al registrar la persona de contacto'); return }
     }
+    if (!contactoId) { setError('La persona de contacto es obligatoria'); return }
 
     const { data: egresoRes, error: rpcError } = await supabase.rpc('sp_registrar_egreso', {
       p_centro_id: centroId,
@@ -204,7 +214,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
       p_observaciones: data.observaciones || undefined,
     })
 
-    if (rpcError) { setError(rpcError.message); return }
+    if (rpcError) { setError(traducirErrorEgreso(rpcError.message)); return }
 
     // Vincular solicitud si fue seleccionada (HU-09)
     if (solicitudId && egresoRes) {
@@ -217,6 +227,10 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
 
     cerrar()
     router.refresh()
+  }
+
+  function onInvalid() {
+    setError('Revisa los campos obligatorios marcados antes de registrar el egreso.')
   }
 
   function cerrar() {
@@ -248,11 +262,11 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg rounded-xl bg-card border shadow-lg p-6 my-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-xl bg-card border shadow-lg p-6 my-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Registrar egreso</h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
           {/* Categoría (filtro local) */}
           <Field label="Categoría de insumo">
             <select
@@ -272,15 +286,15 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
             <select className={inputCls} {...register('insumo_id')}>
               <option value="">Seleccione un insumo…</option>
               {insumosFiltrados.map((i) => (
-                <option key={i.id} value={i.id}>{i.nombre} ({i.unidad_medida})</option>
+                <option key={i.id} value={i.id}>{i.nombre}</option>
               ))}
             </select>
           </Field>
 
           {/* Cantidad y fecha */}
           <div className="grid grid-cols-2 gap-3">
-            <Field label={`Cantidad${insumoActual ? ` (${insumoActual.unidad_medida})` : ''} *`} error={errors.cantidad?.message}>
-              <input className={inputCls} type="number" step="0.01" min="0.01" {...register('cantidad', { valueAsNumber: true })} />
+            <Field label="Cantidad *" error={errors.cantidad?.message}>
+              <input className={inputCls} type="number" step="1" min="1" {...register('cantidad', { valueAsNumber: true })} />
             </Field>
             <Field label="Fecha *" error={errors.fecha?.message}>
               <input className={inputCls} type="date" {...register('fecha')} />
@@ -332,14 +346,14 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
             </div>
           )}
 
-          {/* Persona contacto */}
+          {/* Persona contacto (obligatoria) */}
           <div className="space-y-2">
-            <label className={labelCls}>Persona contacto (recibe)</label>
+            <label className={labelCls}>Persona contacto (recibe) *</label>
             <div className="flex gap-3">
-              {(['ninguno', 'existente', 'nuevo'] as const).map((modo) => (
+              {(['existente', 'nuevo'] as const).map((modo) => (
                 <label key={modo} className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input type="radio" value={modo} {...register('contacto_modo')} className="accent-primary" />
-                  {modo === 'ninguno' ? 'Sin contacto' : modo === 'existente' ? 'Buscar existente' : 'Nueva persona'}
+                  {modo === 'existente' ? 'Buscar existente' : 'Nueva persona'}
                 </label>
               ))}
             </div>
@@ -415,9 +429,11 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
             </div>
           )}
 
-          {/* Responsables de entrega */}
+          {/* Responsables de entrega (opcional) */}
           <div className="space-y-2">
-            <label className={labelCls}>Responsables de entrega</label>
+            <label className={labelCls}>
+              Responsables de entrega <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
             {responsables.length > 0 && (
               <ul className="space-y-1">
                 {responsables.map((r, idx) => (
@@ -495,7 +511,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
                 <option value="">Sin vincular</option>
                 {solicitudesPendientes.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.insumo} · {s.cantidad_solicitada} {s.unidad_medida} · {s.solicitante} ({s.estado === 'pendiente' ? 'Pendiente' : 'Parcial'})
+                    {s.insumo} · {s.cantidad_solicitada} · {s.solicitante} ({s.estado === 'pendiente' ? 'Pendiente' : 'Parcial'})
                   </option>
                 ))}
               </select>

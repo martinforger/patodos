@@ -13,7 +13,6 @@ type Ingreso = {
   id: string
   fecha_movimiento: string
   cantidad: number
-  unidad_medida: string
   insumo: string
   donante: string
   registrado_por: string
@@ -58,7 +57,7 @@ export default async function IngresosPage() {
         <FormularioIngreso
           centroId={perfil.centro_id}
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
-          insumos={(insumos as { id: string; nombre: string; unidad_medida: string; categoria: string }[]) ?? []}
+          insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
         />
       </div>
 
@@ -92,7 +91,6 @@ export default async function IngresosPage() {
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {ing.insumo}
-                    <span className="ml-1 text-xs text-muted-foreground">{ing.unidad_medida}</span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {ing.cantidad.toLocaleString('es-VE')}

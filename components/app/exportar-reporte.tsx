@@ -5,7 +5,6 @@ type FilaMovimiento = {
   cantidad: number
   fecha_movimiento: string
   insumo: string
-  unidad_medida: string
   categoria: string
   registrado_por: string
   destino: string | null
@@ -22,14 +21,13 @@ type Props = {
 
 export function ExportarReporte({ movimientos, centro, fechaDesde, fechaHasta }: Props) {
   function descargarCSV() {
-    const encabezado = ['Fecha', 'Tipo', 'Categoría', 'Insumo', 'Cantidad', 'Unidad', 'Destino/Donante', 'Registrado por', 'Observaciones']
+    const encabezado = ['Fecha', 'Tipo', 'Categoría', 'Insumo', 'Cantidad', 'Destino/Donante', 'Registrado por', 'Observaciones']
     const filas = movimientos.map((m) => [
       m.fecha_movimiento,
       m.tipo,
       m.categoria,
       m.insumo,
       m.cantidad.toString().replace('.', ','),
-      m.unidad_medida,
       m.tipo === 'egreso' ? (m.destino ?? '') : (m.donante ?? 'Anónimo'),
       m.registrado_por,
       m.observaciones ?? '',

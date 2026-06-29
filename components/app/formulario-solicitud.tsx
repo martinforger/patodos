@@ -8,7 +8,7 @@ import { solicitudSchema, type SolicitudData } from '@/lib/validations/solicitud
 import { personaSchema, type PersonaData } from '@/lib/validations/ingresos'
 import { createClient } from '@/lib/supabase/client'
 
-type Insumo = { id: string; nombre: string; unidad_medida: string; categoria: string }
+type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 
@@ -66,12 +66,10 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
   } = useForm<PersonaData>({ resolver: zodResolver(personaSchema) })
 
   const solicitanteModo = watch('solicitante_modo')
-  const insumoId = watch('insumo_id')
 
   const insumosFiltrados = categoriaSeleccionada
     ? insumos.filter((i) => i.categoria === categorias.find((c) => c.id === categoriaSeleccionada)?.nombre)
     : insumos
-  const insumoActual = insumos.find((i) => i.id === insumoId)
 
   async function crearPersona(data: PersonaData): Promise<string | null> {
     const supabase = createClient()
@@ -165,13 +163,13 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
             <select className={inputCls} {...register('insumo_id')}>
               <option value="">Seleccione un insumo…</option>
               {insumosFiltrados.map((i) => (
-                <option key={i.id} value={i.id}>{i.nombre} ({i.unidad_medida})</option>
+                <option key={i.id} value={i.id}>{i.nombre}</option>
               ))}
             </select>
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label={`Cantidad${insumoActual ? ` (${insumoActual.unidad_medida})` : ''} *`} error={errors.cantidad_solicitada?.message}>
+            <Field label="Cantidad *" error={errors.cantidad_solicitada?.message}>
               <input className={inputCls} type="number" step="0.01" min="0.01" {...register('cantidad_solicitada', { valueAsNumber: true })} />
             </Field>
             <Field label="Fecha *" error={errors.fecha?.message}>

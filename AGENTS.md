@@ -123,12 +123,11 @@ Proyecto Supabase: `patodos` · región: `us-east-1` · PostgreSQL 17
 |---|---|---|
 | id | uuid PK | — |
 | categoria_id | uuid FK → categoria_insumo | — |
-| nombre | varchar(200) | NOT NULL |
-| unidad_medida | varchar(50) | litros, kg, unidades, cajas… |
+| nombre | varchar(200) | NOT NULL — describe todo, ej. "Agua 1L", "Agua Minalba 5L" |
 | descripcion | text | nullable |
 | activo | boolean | DEFAULT true |
 | created_at / updated_at | timestamptz | — |
-| — | UNIQUE (nombre, unidad_medida) | — |
+| — | UNIQUE (nombre) | — |
 
 #### `inventario_centro` — stock actual por (centro, insumo)
 | Columna | Tipo | Notas |

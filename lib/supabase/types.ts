@@ -200,7 +200,6 @@ export type Database = {
           descripcion: string | null
           id: string
           nombre: string
-          unidad_medida: string
           updated_at: string
         }
         Insert: {
@@ -210,7 +209,6 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre: string
-          unidad_medida: string
           updated_at?: string
         }
         Update: {
@@ -220,7 +218,6 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre?: string
-          unidad_medida?: string
           updated_at?: string
         }
         Relationships: [
@@ -623,8 +620,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      fn_centros_del_usuario: { Args: Record<PropertyKey, never>; Returns: string[] }
-      fn_es_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      fn_centros_del_usuario: { Args: never; Returns: string[] }
+      fn_es_admin: { Args: never; Returns: boolean }
       sp_anular_movimiento: {
         Args: { p_motivo: string; p_movimiento_id: string }
         Returns: Json
@@ -661,6 +658,10 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_crear_insumo: {
+        Args: { p_categoria_id: string; p_nombre: string }
+        Returns: Json
+      }
       sp_crear_persona: {
         Args: {
           p_apellido: string
@@ -684,9 +685,9 @@ export type Database = {
         Returns: Json
       }
       sp_inventario_centro: { Args: { p_centro_id: string }; Returns: Json }
-      sp_listar_categorias_insumos: { Args: Record<PropertyKey, never>; Returns: Json }
-      sp_listar_centros: { Args: Record<PropertyKey, never>; Returns: Json }
-      sp_listar_destinos: { Args: Record<PropertyKey, never>; Returns: Json }
+      sp_listar_categorias_insumos: { Args: never; Returns: Json }
+      sp_listar_centros: { Args: never; Returns: Json }
+      sp_listar_destinos: { Args: never; Returns: Json }
       sp_listar_egresos: {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
         Returns: Json
@@ -709,9 +710,9 @@ export type Database = {
         Args: { p_centro_id: string; p_insumo_id?: string }
         Returns: Json
       }
-      sp_listar_usuarios: { Args: Record<PropertyKey, never>; Returns: Json }
-      sp_listar_usuarios_centros: { Args: Record<PropertyKey, never>; Returns: Json }
-      sp_mi_perfil: { Args: Record<PropertyKey, never>; Returns: Json }
+      sp_listar_usuarios: { Args: never; Returns: Json }
+      sp_listar_usuarios_centros: { Args: never; Returns: Json }
+      sp_mi_perfil: { Args: never; Returns: Json }
       sp_registrar_centro_acopio: {
         Args: {
           p_correo?: string
@@ -767,7 +768,7 @@ export type Database = {
         }
         Returns: Json
       }
-      sp_resumen_panel: { Args: Record<PropertyKey, never>; Returns: Json }
+      sp_resumen_panel: { Args: never; Returns: Json }
       sp_vincular_solicitud_egreso: {
         Args: { p_movimiento_id: string; p_solicitud_id: string }
         Returns: Json

@@ -13,7 +13,6 @@ type Egreso = {
   id: string
   fecha_movimiento: string
   cantidad: number
-  unidad_medida: string
   insumo: string
   destino: string
   persona_contacto: string
@@ -65,9 +64,9 @@ export default async function EgresosPage() {
         <FormularioEgreso
           centroId={perfil.centro_id}
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
-          insumos={(insumos as { id: string; nombre: string; unidad_medida: string; categoria: string }[]) ?? []}
+          insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
           destinos={(destinos as { id: string; nombre: string; municipio: string; estado_geo: string }[]) ?? []}
-          solicitudesPendientes={(solicitudesPendientes as { id: string; insumo: string; unidad_medida: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }[]) ?? []}
+          solicitudesPendientes={(solicitudesPendientes as { id: string; insumo: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }[]) ?? []}
         />
       </div>
 
@@ -102,7 +101,6 @@ export default async function EgresosPage() {
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {eg.insumo}
-                    <span className="ml-1 text-xs text-muted-foreground">{eg.unidad_medida}</span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {eg.cantidad.toLocaleString('es-VE')}

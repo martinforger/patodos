@@ -11,7 +11,6 @@ type Perfil = {
 
 type FilaInsumo = {
   insumo: string
-  unidad_medida: string
   categoria: string
   total_ingreso: number
   total_egreso: number
@@ -24,7 +23,6 @@ type FilaMovimiento = {
   cantidad: number
   fecha_movimiento: string
   insumo: string
-  unidad_medida: string
   categoria: string
   registrado_por: string
   destino: string | null
@@ -179,7 +177,6 @@ export default async function ReportesPage({
                         <th className="px-4 py-3 text-right font-medium">Ingresado</th>
                         <th className="px-4 py-3 text-right font-medium">Egresado</th>
                         <th className="px-4 py-3 text-right font-medium">Stock actual</th>
-                        <th className="px-4 py-3 text-left font-medium">Unidad</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -196,7 +193,6 @@ export default async function ReportesPage({
                           <td className="px-4 py-2.5 text-right tabular-nums font-semibold">
                             {fila.stock_actual.toLocaleString('es-VE')}
                           </td>
-                          <td className="px-4 py-2.5 text-muted-foreground">{fila.unidad_medida}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -246,7 +242,6 @@ export default async function ReportesPage({
                           </td>
                           <td className="px-4 py-2.5 font-medium">
                             {mov.insumo}
-                            <span className="ml-1 text-xs text-muted-foreground">{mov.unidad_medida}</span>
                           </td>
                           <td className="px-4 py-2.5 text-right tabular-nums">
                             {mov.cantidad.toLocaleString('es-VE')}

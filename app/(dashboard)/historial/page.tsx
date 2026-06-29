@@ -19,7 +19,6 @@ type Movimiento = {
   anulado_motivo: string | null
   anulado_at: string | null
   insumo: string
-  unidad_medida: string
   categoria: string
   registrado_por: string
   destino: string | null
@@ -165,7 +164,6 @@ export default async function HistorialPage({
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {mov.insumo}
-                    <span className="ml-1 text-xs text-muted-foreground">{mov.unidad_medida}</span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {mov.cantidad.toLocaleString('es-VE')}

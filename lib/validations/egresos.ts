@@ -21,14 +21,19 @@ export const responsableSchema = z.object({
 
 export type ResponsableData = z.infer<typeof responsableSchema>
 
+// Un <select> con opción vacía emite '' (no undefined); aceptarlo evita que la
+// validación falle de forma invisible. onSubmit ya trata '' como "sin seleccionar".
+const uuidOpcional = z.string().uuid().optional().or(z.literal(''))
+
 export const egresoSchema = z.object({
   insumo_id: z.string().uuid('Seleccione un insumo'),
   cantidad: z.number().positive('Debe ser mayor a cero'),
   fecha: z.string().min(1, 'Fecha requerida'),
   destino_modo: z.enum(['existente', 'nuevo']),
-  destino_id: z.string().uuid().optional(),
-  contacto_modo: z.enum(['ninguno', 'existente', 'nuevo']),
-  persona_contacto_id: z.string().uuid().optional(),
+  destino_id: uuidOpcional,
+  // La persona de contacto (quien recibe) es obligatoria: solo se puede buscar o crear.
+  contacto_modo: z.enum(['existente', 'nuevo']),
+  persona_contacto_id: uuidOpcional,
   observaciones: z.string().optional(),
 })
 

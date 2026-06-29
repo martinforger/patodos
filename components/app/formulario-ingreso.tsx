@@ -7,9 +7,13 @@ import { useRouter } from 'next/navigation'
 import { ingresoSchema, personaSchema, type IngresoData, type PersonaData } from '@/lib/validations/ingresos'
 import { createClient } from '@/lib/supabase/client'
 
-type Insumo = { id: string; nombre: string; unidad_medida: string; categoria: string }
+type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
+
+function normalizarTexto(t: string) {
+  return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
 
 const inputCls = 'w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 const labelCls = 'text-sm font-medium'
@@ -33,11 +37,22 @@ type Props = {
 export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('')
+
+  // Insumo
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
+  const [busquedaInsumo, setBusquedaInsumo] = useState('')
+  const [insumoSeleccionado, setInsumoSeleccionado] = useState<Insumo | null>(null)
+  const [modoNuevoInsumo, setModoNuevoInsumo] = useState(false)
+  const [nuevoInsumoNombre, setNuevoInsumoNombre] = useState('')
+  const [nuevoInsumoCategoria, setNuevoInsumoCategoria] = useState('')
+  const [creandoInsumo, setCreandoInsumo] = useState(false)
+
+  // Donante
   const [busquedaDonante, setBusquedaDonante] = useState('')
   const [resultadosBusqueda, setResultadosBusqueda] = useState<Persona[]>([])
   const [buscando, setBuscando] = useState(false)
   const [personaSeleccionada, setPersonaSeleccionada] = useState<Persona | null>(null)
+
   const router = useRouter()
 
   const {
@@ -64,13 +79,17 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
   } = useForm<PersonaData>({ resolver: zodResolver(personaSchema) })
 
   const donanteModo = watch('donante_modo')
-  const insumoId = watch('insumo_id')
 
-  const insumosFiltrados = categoriaSeleccionada
+  // Filtra por categoría primero, luego por texto
+  const insumosFiltradosCategoria = categoriaSeleccionada
     ? insumos.filter((i) => i.categoria === categorias.find((c) => c.id === categoriaSeleccionada)?.nombre)
     : insumos
 
-  const insumoActual = insumos.find((i) => i.id === insumoId)
+  const insumosSugeridos = busquedaInsumo.length >= 1
+    ? insumosFiltradosCategoria
+        .filter((i) => normalizarTexto(i.nombre).includes(normalizarTexto(busquedaInsumo)))
+        .slice(0, 8)
+    : []
 
   useEffect(() => {
     if (donanteModo !== 'existente') {
@@ -78,10 +97,47 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
       setBusquedaDonante('')
       setResultadosBusqueda([])
     }
-    if (donanteModo !== 'nuevo') {
-      resetPersona()
-    }
+    if (donanteModo !== 'nuevo') resetPersona()
   }, [donanteModo, resetPersona])
+
+  function seleccionarInsumo(i: Insumo) {
+    setInsumoSeleccionado(i)
+    setValue('insumo_id', i.id)
+    setBusquedaInsumo('')
+    setModoNuevoInsumo(false)
+  }
+
+  function iniciarNuevoInsumo() {
+    setModoNuevoInsumo(true)
+    setNuevoInsumoNombre(busquedaInsumo)
+    setNuevoInsumoCategoria(categoriaSeleccionada)
+    setBusquedaInsumo('')
+  }
+
+  function cancelarNuevoInsumo() {
+    setModoNuevoInsumo(false)
+    setNuevoInsumoNombre('')
+    setNuevoInsumoCategoria('')
+  }
+
+  async function confirmarNuevoInsumo() {
+    if (!nuevoInsumoNombre.trim() || !nuevoInsumoCategoria) {
+      setError('Complete nombre y categoría del insumo')
+      return
+    }
+    setCreandoInsumo(true)
+    setError(null)
+    const supabase = createClient()
+    const { data, error: rpcError } = await supabase.rpc('sp_crear_insumo', {
+      p_nombre: nuevoInsumoNombre.trim(),
+      p_categoria_id: nuevoInsumoCategoria,
+    })
+    setCreandoInsumo(false)
+    if (rpcError) { setError(rpcError.message); return }
+    const creado = data as { id: string; nombre: string; categoria: string }
+    seleccionarInsumo(creado)
+    cancelarNuevoInsumo()
+  }
 
   async function buscarPersona(termino: string) {
     if (termino.length < 2) { setResultadosBusqueda([]); return }
@@ -145,9 +201,16 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     resetPersona()
     setPersonaSeleccionada(null)
     setBusquedaDonante('')
+    setBusquedaInsumo('')
+    setInsumoSeleccionado(null)
     setCategoriaSeleccionada('')
+    setModoNuevoInsumo(false)
     setAbierto(false)
     router.refresh()
+  }
+
+  function onInvalid() {
+    setError('Revisa los campos obligatorios marcados antes de registrar el ingreso.')
   }
 
   function cerrar() {
@@ -156,8 +219,11 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     resetPersona()
     setPersonaSeleccionada(null)
     setBusquedaDonante('')
-    setResultadosBusqueda([])
+    setBusquedaInsumo('')
+    setInsumoSeleccionado(null)
     setCategoriaSeleccionada('')
+    setModoNuevoInsumo(false)
+    setResultadosBusqueda([])
     setError(null)
   }
 
@@ -173,17 +239,23 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg rounded-xl bg-card border shadow-lg p-6 my-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-xl bg-card border shadow-lg p-6 my-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Registrar ingreso</h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
           {/* Categoría (filtro local) */}
           <Field label="Categoría de insumo">
             <select
               className={inputCls}
               value={categoriaSeleccionada}
-              onChange={(e) => { setCategoriaSeleccionada(e.target.value); setValue('insumo_id', '') }}
+              onChange={(e) => {
+                setCategoriaSeleccionada(e.target.value)
+                setInsumoSeleccionado(null)
+                setBusquedaInsumo('')
+                setValue('insumo_id', '')
+                setModoNuevoInsumo(false)
+              }}
             >
               <option value="">Todas las categorías</option>
               {categorias.map((c) => (
@@ -192,22 +264,113 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
             </select>
           </Field>
 
-          {/* Insumo */}
+          {/* Insumo — input con sugerencias */}
           <Field label="Insumo *" error={errors.insumo_id?.message}>
-            <select className={inputCls} {...register('insumo_id')}>
-              <option value="">Seleccione un insumo…</option>
-              {insumosFiltrados.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nombre} ({i.unidad_medida})
-                </option>
-              ))}
-            </select>
+            {insumoSeleccionado ? (
+              <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium">{insumoSeleccionado.nombre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {insumoSeleccionado.categoria}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInsumoSeleccionado(null)
+                    setBusquedaInsumo('')
+                    setValue('insumo_id', '')
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cambiar
+                </button>
+              </div>
+            ) : modoNuevoInsumo ? (
+              <div className="space-y-3 rounded-md border bg-muted/40 p-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nuevo insumo</p>
+                <Field label="Nombre *">
+                  <input
+                    className={inputCls}
+                    value={nuevoInsumoNombre}
+                    onChange={(e) => setNuevoInsumoNombre(e.target.value)}
+                    autoFocus
+                  />
+                </Field>
+                <Field label="Categoría *">
+                  <select
+                    className={inputCls}
+                    value={nuevoInsumoCategoria}
+                    onChange={(e) => setNuevoInsumoCategoria(e.target.value)}
+                  >
+                    <option value="">Selecciona…</option>
+                    {categorias.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </Field>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={cancelarNuevoInsumo}
+                    className="rounded-md border px-3 py-1.5 text-xs hover:bg-muted"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmarNuevoInsumo}
+                    disabled={creandoInsumo}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {creandoInsumo ? 'Creando…' : 'Crear insumo'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  className={inputCls}
+                  placeholder="Escribe para buscar un insumo…"
+                  value={busquedaInsumo}
+                  onChange={(e) => setBusquedaInsumo(e.target.value)}
+                  autoComplete="off"
+                />
+                {(insumosSugeridos.length > 0 || busquedaInsumo.length >= 1) && (
+                  <ul className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow text-sm max-h-52 overflow-y-auto">
+                    {insumosSugeridos.map((i) => (
+                      <li key={i.id} className="border-b last:border-b-0">
+                        <button
+                          type="button"
+                          onClick={() => seleccionarInsumo(i)}
+                          className="w-full px-3 py-2 text-left hover:bg-muted/50"
+                        >
+                          <span className="font-medium">{i.nombre}</span>
+                          <span className="ml-2 text-muted-foreground text-xs">
+                            {i.categoria}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={iniciarNuevoInsumo}
+                        className="w-full px-3 py-2 text-left text-primary hover:bg-muted/50 font-medium"
+                      >
+                        + Crear &quot;{busquedaInsumo || 'nuevo insumo'}&quot;
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </div>
+            )}
           </Field>
 
           {/* Cantidad y fecha */}
           <div className="grid grid-cols-2 gap-3">
-            <Field label={`Cantidad${insumoActual ? ` (${insumoActual.unidad_medida})` : ''} *`} error={errors.cantidad?.message}>
-              <input className={inputCls} type="number" step="0.01" min="0.01" {...register('cantidad', { valueAsNumber: true })} />
+            <Field label="Cantidad *" error={errors.cantidad?.message}>
+              <input className={inputCls} type="number" step="1" min="1" {...register('cantidad', { valueAsNumber: true })} />
             </Field>
             <Field label="Fecha *" error={errors.fecha?.message}>
               <input className={inputCls} type="date" {...register('fecha')} />

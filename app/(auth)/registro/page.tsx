@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function RegistroPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
+  const [correoConfirmacion, setCorreoConfirmacion] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -20,7 +21,7 @@ export default function RegistroPage() {
   async function onSubmit(data: RegistroData) {
     setError(null)
     const supabase = createClient()
-    const { error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.correo,
       password: data.contrasena,
       options: {
@@ -35,8 +36,40 @@ export default function RegistroPage() {
       setError(authError.message)
       return
     }
+    // Si no hay sesión activa, Supabase requiere confirmar el correo antes de entrar.
+    if (!authData.session) {
+      setCorreoConfirmacion(data.correo)
+      return
+    }
     router.push('/dashboard')
     router.refresh()
+  }
+
+  if (correoConfirmacion) {
+    return (
+      <div className="w-full max-w-sm text-center">
+        <div className="mb-6 flex justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
+            ✉️
+          </div>
+        </div>
+        <h1 className="text-2xl font-bold">Confirma tu correo</h1>
+        <p className="text-muted-foreground mt-3 text-sm">
+          Te enviamos un correo de confirmación a{' '}
+          <span className="font-medium text-foreground">{correoConfirmacion}</span>.
+          Abre el enlace que recibiste para activar tu cuenta antes de iniciar sesión.
+        </p>
+        <p className="text-muted-foreground mt-2 text-xs">
+          Si no lo ves, revisa tu carpeta de spam o correo no deseado.
+        </p>
+        <Link
+          href="/login"
+          className="mt-6 inline-block w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Ir a iniciar sesión
+        </Link>
+      </div>
+    )
   }
 
   return (

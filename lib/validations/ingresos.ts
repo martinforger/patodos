@@ -17,7 +17,8 @@ export const ingresoSchema = z.object({
   fecha: z.string().min(1, 'Fecha requerida'),
   observaciones: z.string().optional(),
   donante_modo: z.enum(['anonimo', 'existente', 'nuevo']),
-  donante_id: z.string().uuid().optional(),
+  // Un <select>/campo vacío emite '' (no undefined); aceptarlo evita validación fallida invisible.
+  donante_id: z.string().uuid().optional().or(z.literal('')),
   donante: personaSchema.optional(),
 })
 

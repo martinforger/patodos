@@ -13,7 +13,6 @@ type ItemInventario = {
   id: string
   insumo_id: string
   insumo: string
-  unidad_medida: string
   categoria_id: string
   categoria: string
   stock: number
@@ -70,14 +69,13 @@ export default async function InventarioPage({
               <th className="px-4 py-3 text-left font-medium">Insumo</th>
               <th className="px-4 py-3 text-left font-medium">Categoría</th>
               <th className="px-4 py-3 text-right font-medium">Stock</th>
-              <th className="px-4 py-3 text-left font-medium">Unidad</th>
               <th className="px-4 py-3 text-left font-medium">Actualizado</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {filtrado.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                   No hay insumos registrados en el inventario.
                 </td>
               </tr>
@@ -94,7 +92,6 @@ export default async function InventarioPage({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{item.unidad_medida}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     {new Date(item.updated_at).toLocaleDateString('es-VE')}
                   </td>

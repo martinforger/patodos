@@ -14,7 +14,6 @@ type Solicitud = {
   fecha_solicitud: string
   cantidad_solicitada: number
   cantidad_despachada: number
-  unidad_medida: string
   insumo: string
   solicitante: string
   solicitante_telefono: string
@@ -75,7 +74,7 @@ export default async function SolicitudesPage() {
         <FormularioSolicitud
           centroId={perfil.centro_id}
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
-          insumos={(insumos as { id: string; nombre: string; unidad_medida: string; categoria: string }[]) ?? []}
+          insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
         />
       </div>
 
@@ -107,7 +106,6 @@ export default async function SolicitudesPage() {
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {sol.insumo}
-                    <span className="ml-1 text-xs text-muted-foreground">{sol.unidad_medida}</span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {sol.cantidad_solicitada.toLocaleString('es-VE')}
