@@ -158,6 +158,13 @@ export type Database = {
             referencedRelation: "asistencia_voluntario"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "comida_voluntario_marcado_por_fkey"
+            columns: ["marcado_por"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id"]
+          },
         ]
       }
       destino: {
@@ -283,6 +290,7 @@ export type Database = {
           descripcion: string | null
           id: string
           nombre: string
+          presentacion: string | null
           unidad_medida: string | null
           updated_at: string
         }
@@ -293,6 +301,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre: string
+          presentacion?: string | null
           unidad_medida?: string | null
           updated_at?: string
         }
@@ -303,6 +312,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre?: string
+          presentacion?: string | null
           unidad_medida?: string | null
           updated_at?: string
         }
@@ -467,6 +477,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reporte_bug: {
+        Row: {
+          created_at: string
+          descripcion: string
+          estado: string
+          id: string
+          pagina: string | null
+          titulo: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          descripcion: string
+          estado?: string
+          id?: string
+          pagina?: string | null
+          titulo: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string
+          estado?: string
+          id?: string
+          pagina?: string | null
+          titulo?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reporte_bug_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       responsable_entrega: {
         Row: {
@@ -746,6 +797,62 @@ export type Database = {
           },
         ]
       }
+      voluntario: {
+        Row: {
+          activo: boolean
+          apellidos: string
+          cedula_numero: string
+          centro_id: string
+          created_at: string
+          fecha_nacimiento: string | null
+          id: string
+          nacionalidad: string
+          nombres: string
+          telefono: string | null
+          telefono_emergencia: string | null
+          updated_at: string
+          zona: string | null
+        }
+        Insert: {
+          activo?: boolean
+          apellidos: string
+          cedula_numero: string
+          centro_id: string
+          created_at?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nacionalidad: string
+          nombres: string
+          telefono?: string | null
+          telefono_emergencia?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Update: {
+          activo?: boolean
+          apellidos?: string
+          cedula_numero?: string
+          centro_id?: string
+          created_at?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nacionalidad?: string
+          nombres?: string
+          telefono?: string | null
+          telefono_emergencia?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voluntario_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -754,6 +861,10 @@ export type Database = {
       fn_centros_del_usuario: { Args: never; Returns: string[] }
       fn_es_admin: { Args: never; Returns: boolean }
       fn_es_coordinador: { Args: { p_centro_id: string }; Returns: boolean }
+      sp_actualizar_estado_bug: {
+        Args: { p_bug_id: string; p_estado: string }
+        Returns: Json
+      }
       sp_actualizar_estado_entrega: {
         Args: {
           p_estado_entrega: string
@@ -821,7 +932,15 @@ export type Database = {
               p_categoria_id: string
               p_nombre: string
               p_unidad_medida?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_categoria_id: string
+              p_nombre: string
               p_presentacion?: string
+              p_unidad_medida?: string
             }
             Returns: Json
           }
@@ -830,7 +949,6 @@ export type Database = {
               p_categoria_id: string
               p_nombre: string
               p_unidad_medida: string
-              p_presentacion?: string
             }
             Returns: Json
           }
@@ -843,6 +961,10 @@ export type Database = {
           p_observaciones?: string
           p_telefono: string
         }
+        Returns: Json
+      }
+      sp_crear_reporte_bug: {
+        Args: { p_descripcion: string; p_pagina?: string; p_titulo: string }
         Returns: Json
       }
       sp_historial_movimientos: {
@@ -879,6 +1001,7 @@ export type Database = {
         Returns: Json
       }
       sp_listar_insumos: { Args: { p_categoria_id?: string }; Returns: Json }
+      sp_listar_reportes_bug: { Args: never; Returns: Json }
       sp_listar_solicitudes: {
         Args: {
           p_centro_id: string
