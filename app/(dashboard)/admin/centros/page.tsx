@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { FormularioCentro } from './formulario-centro'
+import { ToggleVisibilidad } from './toggle-visibilidad'
 
 type Centro = {
   id: string
@@ -9,6 +10,7 @@ type Centro = {
   estado_geo: string
   telefono: string | null
   activo: boolean
+  es_publico: boolean
 }
 
 async function getCentros(): Promise<Centro[]> {
@@ -43,13 +45,14 @@ export default async function CentrosPage() {
               <th className="px-4 py-3 text-left font-medium">Municipio</th>
               <th className="px-4 py-3 text-left font-medium">Estado</th>
               <th className="px-4 py-3 text-left font-medium">Teléfono</th>
-              <th className="px-4 py-3 text-left font-medium">Estado</th>
+              <th className="px-4 py-3 text-left font-medium">Visibilidad</th>
+              <th className="px-4 py-3 text-left font-medium">Activo</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {centros.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   No hay centros registrados aún.
                 </td>
               </tr>
@@ -60,6 +63,9 @@ export default async function CentrosPage() {
                   <td className="px-4 py-3 text-muted-foreground">{c.municipio}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.estado_geo}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.telefono ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <ToggleVisibilidad centroId={c.id} esPublico={c.es_publico} />
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                       c.activo

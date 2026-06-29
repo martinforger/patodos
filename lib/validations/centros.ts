@@ -7,6 +7,7 @@ export const centroSchema = z.object({
   estado_geo: z.string().min(2, 'Estado requerido'),
   telefono: z.string().optional(),
   correo: z.string().email('Correo inválido').optional().or(z.literal('')),
+  es_publico: z.boolean(),
 })
 
 export type CentroData = z.infer<typeof centroSchema>

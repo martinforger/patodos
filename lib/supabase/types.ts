@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      asistencia_voluntario: {
+        Row: {
+          centro_id: string
+          created_at: string
+          fecha: string
+          hora_checkin: string
+          id: string
+          voluntario_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          fecha?: string
+          hora_checkin?: string
+          id?: string
+          voluntario_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          fecha?: string
+          hora_checkin?: string
+          id?: string
+          voluntario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencia_voluntario_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_voluntario_voluntario_id_fkey"
+            columns: ["voluntario_id"]
+            isOneToOne: false
+            referencedRelation: "voluntario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categoria_insumo: {
         Row: {
           activo: boolean
@@ -44,6 +86,7 @@ export type Database = {
           correo: string | null
           created_at: string
           direccion: string
+          es_publico: boolean
           estado_geo: string
           id: string
           municipio: string
@@ -56,6 +99,7 @@ export type Database = {
           correo?: string | null
           created_at?: string
           direccion: string
+          es_publico?: boolean
           estado_geo: string
           id?: string
           municipio: string
@@ -68,6 +112,7 @@ export type Database = {
           correo?: string | null
           created_at?: string
           direccion?: string
+          es_publico?: boolean
           estado_geo?: string
           id?: string
           municipio?: string
@@ -76,6 +121,51 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      comida_voluntario: {
+        Row: {
+          asistencia_id: string
+          comio: boolean
+          id: string
+          marcado_at: string
+          marcado_por: string | null
+          numero_comida: number
+          updated_at: string
+        }
+        Insert: {
+          asistencia_id: string
+          comio?: boolean
+          id?: string
+          marcado_at?: string
+          marcado_por?: string | null
+          numero_comida: number
+          updated_at?: string
+        }
+        Update: {
+          asistencia_id?: string
+          comio?: boolean
+          id?: string
+          marcado_at?: string
+          marcado_por?: string | null
+          numero_comida?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comida_voluntario_asistencia_id_fkey"
+            columns: ["asistencia_id"]
+            isOneToOne: false
+            referencedRelation: "asistencia_voluntario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comida_voluntario_marcado_por_fkey"
+            columns: ["marcado_por"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       destino: {
         Row: {
@@ -540,6 +630,48 @@ export type Database = {
           },
         ]
       }
+      solicitud_union_centro: {
+        Row: {
+          centro_id: string
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_solicitud_union"]
+          id: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_solicitud_union"]
+          id?: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_solicitud_union"]
+          id?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitud_union_centro_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitud_union_centro_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario: {
         Row: {
           activo: boolean
@@ -621,6 +753,62 @@ export type Database = {
           },
         ]
       }
+      voluntario: {
+        Row: {
+          activo: boolean
+          apellidos: string
+          cedula_numero: string
+          centro_id: string
+          created_at: string
+          fecha_nacimiento: string | null
+          id: string
+          nacionalidad: string
+          nombres: string
+          telefono: string | null
+          telefono_emergencia: string | null
+          updated_at: string
+          zona: string | null
+        }
+        Insert: {
+          activo?: boolean
+          apellidos: string
+          cedula_numero: string
+          centro_id: string
+          created_at?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nacionalidad: string
+          nombres: string
+          telefono?: string | null
+          telefono_emergencia?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Update: {
+          activo?: boolean
+          apellidos?: string
+          cedula_numero?: string
+          centro_id?: string
+          created_at?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nacionalidad?: string
+          nombres?: string
+          telefono?: string | null
+          telefono_emergencia?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voluntario_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -659,14 +847,20 @@ export type Database = {
         Returns: Json
       }
       sp_buscar_persona: { Args: { p_termino: string }; Returns: Json }
+      sp_cambiar_visibilidad_centro: {
+        Args: { p_centro_id: string; p_es_publico: boolean }
+        Returns: Json
+      }
       sp_cancelar_solicitud: {
         Args: { p_motivo?: string; p_solicitud_id: string }
         Returns: Json
       }
+      sp_centro_nombre_publico: { Args: { p_centro_id: string }; Returns: Json }
       sp_crear_centro_acopio: {
         Args: {
           p_correo?: string
           p_direccion: string
+          p_es_publico?: boolean
           p_estado_geo: string
           p_municipio: string
           p_nombre: string
@@ -684,10 +878,25 @@ export type Database = {
         }
         Returns: Json
       }
-      sp_crear_insumo: {
-        Args: { p_categoria_id: string; p_nombre: string; p_unidad_medida?: string }
-        Returns: Json
-      }
+      sp_crear_insumo:
+        | {
+            Args: {
+              p_categoria_id: string
+              p_nombre: string
+              p_unidad_medida?: string
+              p_presentacion?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_categoria_id: string
+              p_nombre: string
+              p_unidad_medida: string
+              p_presentacion?: string
+            }
+            Returns: Json
+          }
       sp_crear_persona: {
         Args: {
           p_apellido: string
@@ -721,6 +930,7 @@ export type Database = {
       }
       sp_listar_categorias_insumos: { Args: never; Returns: Json }
       sp_listar_centros: { Args: never; Returns: Json }
+      sp_listar_centros_publicos: { Args: never; Returns: Json }
       sp_listar_destinos: { Args: never; Returns: Json }
       sp_listar_egresos: {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
@@ -745,14 +955,37 @@ export type Database = {
         Args: { p_centro_id: string; p_insumo_id?: string }
         Returns: Json
       }
+      sp_listar_solicitudes_union: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
       sp_listar_usuarios: { Args: never; Returns: Json }
       sp_listar_usuarios_centros: { Args: never; Returns: Json }
+      sp_listar_voluntarios: { Args: { p_centro_id: string }; Returns: Json }
+      sp_marcar_comida: {
+        Args: {
+          p_asistencia_id: string
+          p_comio: boolean
+          p_numero_comida: number
+        }
+        Returns: Json
+      }
       sp_mi_perfil: { Args: never; Returns: Json }
       sp_mis_centros_coordinados: { Args: never; Returns: Json }
+      sp_mis_solicitudes_union: { Args: never; Returns: Json }
+      sp_registrar_asistencia_voluntario: {
+        Args: {
+          p_cedula_numero: string
+          p_centro_id: string
+          p_nacionalidad: string
+        }
+        Returns: Json
+      }
       sp_registrar_centro_acopio: {
         Args: {
           p_correo?: string
           p_direccion: string
+          p_es_publico?: boolean
           p_estado_geo: string
           p_municipio: string
           p_nombre: string
@@ -808,6 +1041,20 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_registrar_voluntario: {
+        Args: {
+          p_apellidos: string
+          p_cedula_numero: string
+          p_centro_id: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad: string
+          p_nombres: string
+          p_telefono?: string
+          p_telefono_emergencia?: string
+          p_zona?: string
+        }
+        Returns: Json
+      }
       sp_reporte_centro: {
         Args: {
           p_centro_id: string
@@ -816,7 +1063,15 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_resolver_solicitud_union: {
+        Args: { p_accion: string; p_solicitud_id: string }
+        Returns: Json
+      }
       sp_resumen_panel: { Args: never; Returns: Json }
+      sp_solicitar_union_centro: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
       sp_vincular_solicitud_egreso: {
         Args: { p_movimiento_id: string; p_solicitud_id: string }
         Returns: Json
@@ -829,6 +1084,7 @@ export type Database = {
         | "parcialmente_atendida"
         | "completada"
         | "cancelada"
+      estado_solicitud_union: "pendiente" | "aprobada" | "rechazada"
       rol_usuario:
         | "administrador_sistema"
         | "coordinador_centro"
@@ -968,6 +1224,7 @@ export const Constants = {
         "completada",
         "cancelada",
       ],
+      estado_solicitud_union: ["pendiente", "aprobada", "rechazada"],
       rol_usuario: [
         "administrador_sistema",
         "coordinador_centro",

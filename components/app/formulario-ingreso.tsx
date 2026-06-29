@@ -51,6 +51,7 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
   const [nuevoInsumoCategoria, setNuevoInsumoCategoria] = useState('')
   const [nuevoInsumoUnidad, setNuevoInsumoUnidad] = useState('')
   const [nuevoInsumoUnidadPersonalizada, setNuevoInsumoUnidadPersonalizada] = useState('')
+  const [nuevoInsumoPresenacion, setNuevoInsumoPresenacion] = useState('')
   const [creandoInsumo, setCreandoInsumo] = useState(false)
 
   // Donante
@@ -126,6 +127,7 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     setNuevoInsumoCategoria('')
     setNuevoInsumoUnidad('')
     setNuevoInsumoUnidadPersonalizada('')
+    setNuevoInsumoPresenacion('')
   }
 
   async function confirmarNuevoInsumo() {
@@ -143,6 +145,7 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
       p_nombre: nuevoInsumoNombre.trim(),
       p_categoria_id: nuevoInsumoCategoria,
       ...(unidadFinal ? { p_unidad_medida: unidadFinal } : {}),
+      ...(nuevoInsumoPresenacion.trim() ? { p_presentacion: nuevoInsumoPresenacion.trim() } : {}),
     })
     setCreandoInsumo(false)
     if (rpcError) { setError(rpcError.message); return }
@@ -314,6 +317,14 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                     value={nuevoInsumoNombre}
                     onChange={(e) => setNuevoInsumoNombre(e.target.value)}
                     autoFocus
+                  />
+                </Field>
+                <Field label="Presentación (opcional)">
+                  <input
+                    className={inputCls}
+                    placeholder="Ej: 500, 1, 2.5"
+                    value={nuevoInsumoPresenacion}
+                    onChange={(e) => setNuevoInsumoPresenacion(e.target.value)}
                   />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
