@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!perfil) redirect('/bienvenida')
 
   return (
-    <AppTour>
+    <AppTour userId={user.id}>
       <div className="flex h-screen overflow-hidden">
         <Sidebar rol={perfil.rol} />
         <div className="flex flex-1 flex-col overflow-hidden">

@@ -6,7 +6,7 @@ import type { OnbordaProps } from 'onborda'
 import { HelpCircle } from 'lucide-react'
 import { TourCard } from './tour-card'
 
-const STORAGE_KEY = 'patodos_tour_v1'
+const storageKey = (userId: string) => `patodos_tour_v1_${userId}`
 
 // Recorrido guiado que explica el flujo completo de la app.
 // Cada paso apunta a un elemento del sidebar por su id (siempre montado),
@@ -116,6 +116,16 @@ const tours: OnbordaProps['steps'] = [
         pointerRadius: 8,
       },
       {
+        icon: '👥',
+        title: 'Equipo',
+        content:
+          'Los voluntarios y colaboradores de tu centro. Coordinadores pueden ver quién está asignado y con qué rol.',
+        selector: '#tour-equipo',
+        side: 'right-top',
+        pointerPadding: 6,
+        pointerRadius: 8,
+      },
+      {
         icon: '🛠️',
         title: 'Administración',
         content:
@@ -139,17 +149,18 @@ const tours: OnbordaProps['steps'] = [
   },
 ]
 
-function LanzadorTour() {
+function LanzadorTour({ userId }: { userId: string }) {
   const { startOnborda, isOnbordaVisible } = useOnborda()
+  const key = storageKey(userId)
 
-  // Auto-arranque la primera vez que se entra al dashboard.
+  // Auto-arranque la primera vez por usuario en este navegador.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (localStorage.getItem(STORAGE_KEY)) return
-    localStorage.setItem(STORAGE_KEY, '1')
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
     const t = setTimeout(() => startOnborda('principal'), 700)
     return () => clearTimeout(t)
-  }, [startOnborda])
+  }, [startOnborda, key])
 
   if (isOnbordaVisible) return null
 
@@ -166,7 +177,7 @@ function LanzadorTour() {
   )
 }
 
-export function AppTour({ children }: { children: React.ReactNode }) {
+export function AppTour({ children, userId }: { children: React.ReactNode; userId: string }) {
   return (
     <OnbordaProvider>
       <Onborda
@@ -176,7 +187,7 @@ export function AppTour({ children }: { children: React.ReactNode }) {
         shadowOpacity="0.6"
       >
         {children}
-        <LanzadorTour />
+        <LanzadorTour userId={userId} />
       </Onborda>
     </OnbordaProvider>
   )
