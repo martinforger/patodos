@@ -122,48 +122,6 @@ export type Database = {
         }
         Relationships: []
       }
-      asistencia_voluntario: {
-        Row: {
-          centro_id: string
-          created_at: string
-          fecha: string
-          hora_checkin: string
-          id: string
-          voluntario_id: string
-        }
-        Insert: {
-          centro_id: string
-          created_at?: string
-          fecha?: string
-          hora_checkin?: string
-          id?: string
-          voluntario_id: string
-        }
-        Update: {
-          centro_id?: string
-          created_at?: string
-          fecha?: string
-          hora_checkin?: string
-          id?: string
-          voluntario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "asistencia_voluntario_centro_id_fkey"
-            columns: ["centro_id"]
-            isOneToOne: false
-            referencedRelation: "centro_acopio"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asistencia_voluntario_voluntario_id_fkey"
-            columns: ["voluntario_id"]
-            isOneToOne: false
-            referencedRelation: "voluntario"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comida_voluntario: {
         Row: {
           asistencia_id: string
@@ -793,35 +751,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      sp_centro_nombre_publico: {
-        Args: { p_centro_id: string }
-        Returns: Json
-      }
-      sp_listar_voluntarios: {
-        Args: { p_centro_id: string }
-        Returns: Json
-      }
-      sp_marcar_comida: {
-        Args: { p_asistencia_id: string; p_numero_comida: number; p_comio: boolean }  // number → integer en DB
-        Returns: Json
-      }
-      sp_registrar_asistencia_voluntario: {
-        Args: { p_centro_id: string; p_nacionalidad: string; p_cedula_numero: string }
-        Returns: Json
-      }
-      sp_registrar_voluntario: {
-        Args: {
-          p_nombres: string
-          p_apellidos: string
-          p_nacionalidad: string
-          p_cedula_numero: string
-          p_fecha_nacimiento?: string
-          p_telefono?: string
-          p_telefono_emergencia?: string
-          p_zona?: string
-        }
-        Returns: Json
-      }
       fn_centros_del_usuario: { Args: never; Returns: string[] }
       fn_es_admin: { Args: never; Returns: boolean }
       fn_es_coordinador: { Args: { p_centro_id: string }; Returns: boolean }

@@ -511,7 +511,30 @@ SUPABASE_SERVICE_ROLE_KEY=<service_key>    # privada, solo en servidor, con extr
 
 ---
 
-## 11. Documentación relacionada
+## 11. Flujo de trabajo Git (Gitflow)
+
+Este proyecto sigue **Gitflow**. Las ramas tienen roles estrictos:
+
+| Rama | Propósito |
+|---|---|
+| `main` | Producción. Siempre desplegable. Solo recibe merges de `hotfix/*` y `release/*`. |
+| `develop` | Integración de features. Base para las ramas de feature. |
+| `feature/<nombre>` | Nueva funcionalidad. Sale de `develop`, vuelve a `develop`. |
+| `release/<version>` | Preparación de release. Sale de `develop`, vuelve a `main` + `develop`. |
+| `hotfix/<nombre>` | Parche urgente de producción. Sale de `main`, vuelve a `main` + `develop`. |
+
+### Reglas para agentes
+
+- **Nunca commitear directamente a `main`**. Cualquier fix urgente va en una rama `hotfix/`.
+- Al crear una `hotfix/`: `git checkout main && git checkout -b hotfix/<descripcion-corta>`.
+- Después de commitear el hotfix, hacer push de la rama: `git push origin hotfix/<nombre>`.
+- El merge a `main` y `develop` lo hace el humano o un pipeline; el agente solo hace push de la rama.
+- Las features nuevas parten siempre de `develop`: `git checkout develop && git checkout -b feature/<nombre>`.
+- Al regenerar tipos de Supabase (`supabase gen types`), verificar que no se introduzcan **identificadores duplicados** en `lib/supabase/types.ts` antes de commitear.
+
+---
+
+## 12. Documentación relacionada
 
 | Archivo | Contenido |
 |---|---|
