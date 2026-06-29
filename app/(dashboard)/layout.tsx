@@ -12,7 +12,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Gate de onboarding: si el usuario no está asignado a ningún centro
   // (y no es admin, que siempre tiene centro) lo mandamos a /bienvenida.
-  const { data: perfil } = await supabase.rpc('sp_mi_perfil')
+  const { data: perfilRaw } = await supabase.rpc('sp_mi_perfil')
+  const perfil = perfilRaw as { rol: string } | null
   if (!perfil) redirect('/bienvenida')
 
   return (
