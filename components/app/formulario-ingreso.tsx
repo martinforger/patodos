@@ -238,11 +238,6 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                   <div>
                     <p className="text-sm font-medium">
                       {insumoSeleccionado.nombre}
-                      {insumoSeleccionado.unidad_medida && (
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                          ({insumoSeleccionado.unidad_medida})
-                        </span>
-                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">{insumoSeleccionado.categoria}</p>
                   </div>
@@ -346,9 +341,6 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                             className="w-full px-3 py-2 text-left hover:bg-muted/50"
                           >
                             <span className="font-medium">{i.nombre}</span>
-                            {i.unidad_medida && (
-                              <span className="ml-1 text-muted-foreground text-xs">({i.unidad_medida})</span>
-                            )}
                             <span className="ml-2 text-muted-foreground text-xs">{i.categoria}</span>
                           </button>
                         </li>

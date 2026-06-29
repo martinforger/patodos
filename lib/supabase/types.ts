@@ -1028,10 +1028,12 @@ export type Database = {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
         Returns: Json
       }
-      sp_listar_insumos: {
-        Args: { p_categoria_id?: string; p_centro_id?: string }
-        Returns: Json
-      }
+      sp_listar_insumos:
+        | { Args: { p_categoria_id?: string }; Returns: Json }
+        | {
+            Args: { p_categoria_id?: string; p_centro_id?: string }
+            Returns: Json
+          }
       sp_listar_reportes_bug: { Args: never; Returns: Json }
       sp_listar_solicitudes: {
         Args: {
