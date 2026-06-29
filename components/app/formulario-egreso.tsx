@@ -13,6 +13,7 @@ import {
 } from '@/lib/validations/egresos'
 import type { PersonaData } from '@/lib/validations/ingresos'
 import { createClient } from '@/lib/supabase/client'
+import { FilaInsumoEgreso, type ItemEgreso } from '@/components/app/fila-insumo-egreso'
 
 type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
@@ -63,15 +64,14 @@ type Props = {
 export function FormularioEgreso({ centroId, categorias, insumos, destinos, solicitudesPendientes = [] }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
+
+  // Insumos a despachar (multi-insumo): empieza con un renglón vacío.
+  const [items, setItems] = useState<ItemEgreso[]>([{ insumo_id: '', cantidad: '', solicitud_id: '' }])
 
   // Contacto existente
   const [busquedaContacto, setBusquedaContacto] = useState('')
   const [resultadosContacto, setResultadosContacto] = useState<Persona[]>([])
   const [contactoSeleccionado, setContactoSeleccionado] = useState<Persona | null>(null)
-
-  // Solicitud vinculada (HU-09)
-  const [solicitudId, setSolicitudId] = useState<string>('')
 
   // Responsables
   const [responsables, setResponsables] = useState<Responsable[]>([])
@@ -82,7 +82,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
   const router = useRouter()
 
   const {
-    register, handleSubmit, reset, watch, setValue,
+    register, handleSubmit, reset, watch,
     formState: { errors, isSubmitting },
   } = useForm<EgresoData>({
     resolver: zodResolver(egresoSchema),
@@ -106,9 +106,17 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
   const destinoModo = watch('destino_modo')
   const contactoModo = watch('contacto_modo')
 
-  const insumosFiltrados = categoriaSeleccionada
-    ? insumos.filter((i) => i.categoria === categorias.find((c) => c.id === categoriaSeleccionada)?.nombre)
-    : insumos
+  function actualizarItem(index: number, patch: Partial<ItemEgreso>) {
+    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)))
+  }
+
+  function agregarItem() {
+    setItems((prev) => [...prev, { insumo_id: '', cantidad: '', solicitud_id: '' }])
+  }
+
+  function quitarItem(index: number) {
+    setItems((prev) => prev.filter((_, i) => i !== index))
+  }
 
   useEffect(() => {
     if (contactoModo !== 'existente') {
@@ -174,6 +182,18 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     setError(null)
     const supabase = createClient()
 
+    // Validar insumos (al menos uno, con cantidad > 0)
+    const itemsValidos = items.filter((it) => it.insumo_id && it.cantidad !== '' && Number(it.cantidad) > 0)
+    if (itemsValidos.length === 0) {
+      setError('Agregue al menos un insumo con cantidad mayor a cero.')
+      return
+    }
+    const insumosRepetidos = new Set(itemsValidos.map((it) => it.insumo_id)).size !== itemsValidos.length
+    if (insumosRepetidos) {
+      setError('Hay insumos repetidos. Use un solo renglón por insumo.')
+      return
+    }
+
     // Resolver destino
     let destinoId: string | null = null
     if (data.destino_modo === 'existente') {
@@ -203,27 +223,24 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     }
     if (!contactoId) { setError('La persona de contacto es obligatoria'); return }
 
-    const { data: egresoRes, error: rpcError } = await supabase.rpc('sp_registrar_egreso', {
+    // La vinculación de solicitud por insumo va dentro del SP (atómica).
+    const itemsPayload = itemsValidos.map((it) => ({
+      insumo_id: it.insumo_id,
+      cantidad: Number(it.cantidad),
+      solicitud_id: it.solicitud_id || undefined,
+    }))
+
+    const { error: rpcError } = await supabase.rpc('sp_registrar_egreso_multiple', {
       p_centro_id: centroId,
-      p_insumo_id: data.insumo_id,
-      p_cantidad: data.cantidad,
       p_fecha: data.fecha,
       p_destino_id: destinoId ?? undefined,
       p_persona_contacto_id: contactoId ?? undefined,
       p_responsables: responsables,
       p_observaciones: data.observaciones || undefined,
+      p_items: itemsPayload,
     })
 
     if (rpcError) { setError(traducirErrorEgreso(rpcError.message)); return }
-
-    // Vincular solicitud si fue seleccionada (HU-09)
-    if (solicitudId && egresoRes) {
-      const movimientoId = (egresoRes as { id: string }).id
-      await supabase.rpc('sp_vincular_solicitud_egreso', {
-        p_solicitud_id: solicitudId,
-        p_movimiento_id: movimientoId,
-      })
-    }
 
     cerrar()
     router.refresh()
@@ -245,8 +262,7 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
     setRespManual({ nombre: '', apellido: '', telefono: '' })
     setBusquedaResp('')
     setResultadosResp([])
-    setCategoriaSeleccionada('')
-    setSolicitudId('')
+    setItems([{ insumo_id: '', cantidad: '', solicitud_id: '' }])
     setError(null)
   }
 
@@ -267,39 +283,35 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
         <h2 className="text-lg font-semibold mb-4">Registrar egreso</h2>
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
-          {/* Categoría (filtro local) */}
-          <Field label="Categoría de insumo">
-            <select
-              className={inputCls}
-              value={categoriaSeleccionada}
-              onChange={(e) => { setCategoriaSeleccionada(e.target.value); setValue('insumo_id', '') }}
+          {/* Insumos a despachar (multi-insumo) */}
+          <div className="space-y-2">
+            <label className={labelCls}>Insumos a despachar *</label>
+            {items.map((it, idx) => (
+              <FilaInsumoEgreso
+                key={idx}
+                item={it}
+                index={idx}
+                categorias={categorias}
+                insumos={insumos}
+                solicitudesPendientes={solicitudesPendientes}
+                onChange={actualizarItem}
+                onRemove={quitarItem}
+                removable={items.length > 1}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={agregarItem}
+              className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
             >
-              <option value="">Todas las categorías</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
-          </Field>
-
-          {/* Insumo */}
-          <Field label="Insumo *" error={errors.insumo_id?.message}>
-            <select className={inputCls} {...register('insumo_id')}>
-              <option value="">Seleccione un insumo…</option>
-              {insumosFiltrados.map((i) => (
-                <option key={i.id} value={i.id}>{i.nombre}</option>
-              ))}
-            </select>
-          </Field>
-
-          {/* Cantidad y fecha */}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Cantidad *" error={errors.cantidad?.message}>
-              <input className={inputCls} type="number" step="1" min="1" {...register('cantidad', { valueAsNumber: true })} />
-            </Field>
-            <Field label="Fecha *" error={errors.fecha?.message}>
-              <input className={inputCls} type="date" {...register('fecha')} />
-            </Field>
+              + Agregar insumo
+            </button>
           </div>
+
+          {/* Fecha */}
+          <Field label="Fecha *" error={errors.fecha?.message}>
+            <input className={inputCls} type="date" {...register('fecha')} />
+          </Field>
 
           {/* Destino */}
           <div className="space-y-2">
@@ -498,25 +510,6 @@ export function FormularioEgreso({ centroId, categorias, insumos, destinos, soli
               </button>
             </div>
           </div>
-
-          {/* Vincular solicitud (HU-09) */}
-          {solicitudesPendientes.length > 0 && (
-            <div className="space-y-1">
-              <label className={labelCls}>Vincular solicitud (opcional)</label>
-              <select
-                className={inputCls}
-                value={solicitudId}
-                onChange={(e) => setSolicitudId(e.target.value)}
-              >
-                <option value="">Sin vincular</option>
-                {solicitudesPendientes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.insumo} · {s.cantidad_solicitada} · {s.solicitante} ({s.estado === 'pendiente' ? 'Pendiente' : 'Parcial'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           {/* Observaciones */}
           <Field label="Observaciones (opcional)" error={errors.observaciones?.message}>

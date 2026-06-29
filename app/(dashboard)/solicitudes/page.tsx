@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { FormularioSolicitud } from '@/components/app/formulario-solicitud'
+import { CambiarEstadoEntrega } from '@/components/app/cambiar-estado-entrega'
+
+type EstadoEntrega = 'pendiente' | 'embalado' | 'enviado' | 'entregado'
 
 type Perfil = {
   usuario_id: string
@@ -18,6 +21,7 @@ type Solicitud = {
   solicitante: string
   solicitante_telefono: string
   estado: 'pendiente' | 'parcialmente_atendida' | 'completada' | 'cancelada'
+  estado_entrega: EstadoEntrega
   registrado_por: string
   observaciones: string | null
 }
@@ -40,6 +44,20 @@ const estadoLabel: Record<Solicitud['estado'], string> = {
   parcialmente_atendida: 'Parcial',
   completada: 'Completada',
   cancelada: 'Cancelada',
+}
+
+const entregaBadge: Record<EstadoEntrega, string> = {
+  pendiente: 'bg-muted text-muted-foreground',
+  embalado: 'bg-amber-100 text-amber-700',
+  enviado: 'bg-blue-100 text-blue-700',
+  entregado: 'bg-green-100 text-green-700',
+}
+
+const entregaLabel: Record<EstadoEntrega, string> = {
+  pendiente: 'Pendiente',
+  embalado: 'Embalado',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
 }
 
 export default async function SolicitudesPage() {
@@ -89,12 +107,13 @@ export default async function SolicitudesPage() {
               <th className="px-4 py-3 text-left font-medium">Solicitante</th>
               <th className="px-4 py-3 text-left font-medium">Registrado por</th>
               <th className="px-4 py-3 text-left font-medium">Estado</th>
+              <th className="px-4 py-3 text-left font-medium">Entrega</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {listado.datos.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   No hay solicitudes registradas aún.
                 </td>
               </tr>
@@ -122,6 +141,20 @@ export default async function SolicitudesPage() {
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${estadoBadge[sol.estado]}`}>
                       {estadoLabel[sol.estado]}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${entregaBadge[sol.estado_entrega]}`}>
+                        {entregaLabel[sol.estado_entrega]}
+                      </span>
+                      {sol.estado !== 'cancelada' && (
+                        <CambiarEstadoEntrega
+                          solicitudId={sol.id}
+                          estadoActual={sol.estado_entrega}
+                          observacionesActuales={sol.observaciones}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

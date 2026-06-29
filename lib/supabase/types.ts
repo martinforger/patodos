@@ -433,6 +433,7 @@ export type Database = {
           centro_id: string
           created_at: string
           estado: Database["public"]["Enums"]["estado_solicitud"]
+          estado_entrega: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud: string
           id: string
           insumo_id: string
@@ -446,6 +447,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           estado?: Database["public"]["Enums"]["estado_solicitud"]
+          estado_entrega?: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud?: string
           id?: string
           insumo_id: string
@@ -459,6 +461,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           estado?: Database["public"]["Enums"]["estado_solicitud"]
+          estado_entrega?: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud?: string
           id?: string
           insumo_id?: string
@@ -623,6 +626,14 @@ export type Database = {
       fn_centros_del_usuario: { Args: never; Returns: string[] }
       fn_es_admin: { Args: never; Returns: boolean }
       fn_es_coordinador: { Args: { p_centro_id: string }; Returns: boolean }
+      sp_actualizar_estado_entrega: {
+        Args: {
+          p_estado_entrega: string
+          p_observaciones?: string
+          p_solicitud_id: string
+        }
+        Returns: Json
+      }
       sp_anular_movimiento: {
         Args: { p_motivo: string; p_movimiento_id: string }
         Returns: Json
@@ -759,6 +770,18 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_registrar_egreso_multiple: {
+        Args: {
+          p_centro_id: string
+          p_destino_id: string
+          p_fecha: string
+          p_items?: Json
+          p_observaciones?: string
+          p_persona_contacto_id?: string
+          p_responsables?: Json
+        }
+        Returns: Json
+      }
       sp_registrar_ingreso: {
         Args: {
           p_cantidad: number
@@ -797,6 +820,7 @@ export type Database = {
       }
     }
     Enums: {
+      estado_entrega: "pendiente" | "embalado" | "enviado" | "entregado"
       estado_solicitud:
         | "pendiente"
         | "parcialmente_atendida"
@@ -934,6 +958,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      estado_entrega: ["pendiente", "embalado", "enviado", "entregado"],
       estado_solicitud: [
         "pendiente",
         "parcialmente_atendida",

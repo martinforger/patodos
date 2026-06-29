@@ -25,9 +25,17 @@ export type ResponsableData = z.infer<typeof responsableSchema>
 // validación falle de forma invisible. onSubmit ya trata '' como "sin seleccionar".
 const uuidOpcional = z.string().uuid().optional().or(z.literal(''))
 
-export const egresoSchema = z.object({
+// Cada renglón de insumo a despachar en un mismo egreso (multi-insumo).
+// solicitud_id es opcional: vincula ese insumo a una solicitud pendiente.
+export const itemEgresoSchema = z.object({
   insumo_id: z.string().uuid('Seleccione un insumo'),
   cantidad: z.number().positive('Debe ser mayor a cero'),
+  solicitud_id: uuidOpcional,
+})
+
+export type ItemEgresoData = z.infer<typeof itemEgresoSchema>
+
+export const egresoSchema = z.object({
   fecha: z.string().min(1, 'Fecha requerida'),
   destino_modo: z.enum(['existente', 'nuevo']),
   destino_id: uuidOpcional,
