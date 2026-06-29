@@ -50,7 +50,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex h-full w-56 flex-col border-r bg-sidebar">
+    <aside className="hidden md:flex h-full w-56 flex-col border-r bg-sidebar">
       <div id="tour-brand" className="px-4 py-5 border-b">
         <p className="font-bold text-sm text-sidebar-foreground">Ayuda Humanitaria</p>
         <p className="text-xs text-muted-foreground mt-0.5">Venezuela</p>

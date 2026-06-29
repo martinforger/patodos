@@ -27,7 +27,7 @@ export default async function CentrosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Centros de acopio</h1>
           <p className="text-sm text-muted-foreground mt-0.5">HU-01 · Solo administrador del sistema</p>
@@ -35,7 +35,7 @@ export default async function CentrosPage() {
         <FormularioCentro />
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
+      <div className="rounded-lg border overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>

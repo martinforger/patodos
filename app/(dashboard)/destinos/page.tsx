@@ -27,7 +27,7 @@ export default async function DestinosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Destinos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -37,8 +37,8 @@ export default async function DestinosPage() {
         <FormularioDestino />
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-lg border overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[600px] text-sm">
           <thead className="bg-muted/50">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Nombre</th>

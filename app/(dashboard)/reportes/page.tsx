@@ -168,7 +168,7 @@ export default async function ReportesPage({
             {reporte.resumen_insumos.length > 0 && (
               <section className="mb-6">
                 <h2 className="text-base font-semibold mb-3">Movimientos por insumo</h2>
-                <div className="rounded-lg border overflow-hidden">
+                <div className="rounded-lg border overflow-hidden overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>
@@ -211,7 +211,7 @@ export default async function ReportesPage({
                   No hay movimientos en el período seleccionado.
                 </p>
               ) : (
-                <div className="rounded-lg border overflow-hidden">
+                <div className="rounded-lg border overflow-hidden overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>

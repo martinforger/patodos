@@ -116,8 +116,8 @@ export default async function HistorialPage({
         </a>
       </form>
 
-      <div className="rounded-lg border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-lg border overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[700px] text-sm">
           <thead className="bg-muted/50">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Fecha</th>

@@ -65,7 +65,7 @@ export default async function EquipoPage() {
                 <InvitarUsuarioForm centroId={centro.id} />
               </div>
 
-              <div className="rounded-lg border overflow-hidden">
+              <div className="rounded-lg border overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>

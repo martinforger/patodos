@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/app/sidebar'
+import { MobileNav } from '@/components/app/mobile-nav'
 import { AppTour } from '@/components/app/app-tour'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,9 +19,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <AppTour>
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        <main id="tour-content" className="flex-1 overflow-y-auto bg-background p-6">
-          {children}
-        </main>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Barra superior móvil */}
+          <header className="flex md:hidden items-center gap-3 border-b bg-sidebar px-4 py-3 shrink-0">
+            <MobileNav />
+            <span className="font-bold text-sm text-sidebar-foreground">Ayuda Humanitaria</span>
+          </header>
+          <main id="tour-content" className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
+            {children}
+          </main>
+        </div>
       </div>
     </AppTour>
   )
