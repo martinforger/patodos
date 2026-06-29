@@ -1,13 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getPerfil } from '@/lib/supabase/perfil'
+import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
+import { createClient } from '@/lib/supabase/server'
 import { FormularioEgreso } from '@/components/app/formulario-egreso'
-
-type Perfil = {
-  usuario_id: string
-  centro_id: string
-  centro: string
-  rol: string
-}
 
 type Egreso = {
   id: string
@@ -31,10 +26,8 @@ type ListadoEgresos = {
 export default async function EgresosPage() {
   const supabase = await createClient()
 
-  const { data: perfilRaw, error: perfilError } = await supabase.rpc('sp_mi_perfil')
-  if (perfilError || !perfilRaw) redirect('/dashboard')
-
-  const perfil = perfilRaw as Perfil
+  const perfil = await getPerfil()
+  if (!perfil) redirect('/dashboard')
 
   const { data: listadoRaw } = await supabase.rpc('sp_listar_egresos', {
     p_centro_id: perfil.centro_id,
@@ -60,9 +53,12 @@ export default async function EgresosPage() {
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Egresos</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {perfil.centro} · {listado.total} registro{listado.total !== 1 ? 's' : ''}
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <h1 className="text-2xl font-bold">Egresos</h1>
+            <SelectorCentroHeader />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {listado.total} registro{listado.total !== 1 ? 's' : ''}
           </p>
         </div>
         <FormularioEgreso

@@ -1,13 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getPerfil } from '@/lib/supabase/perfil'
+import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
+import { createClient } from '@/lib/supabase/server'
 import { BotonAnular } from '@/components/app/boton-anular'
-
-type Perfil = {
-  usuario_id: string
-  centro_id: string
-  centro: string
-  rol: string
-}
 
 type Movimiento = {
   id: string
@@ -47,10 +42,8 @@ export default async function HistorialPage({
   const params = await searchParams
   const supabase = await createClient()
 
-  const { data: perfilRaw, error: perfilError } = await supabase.rpc('sp_mi_perfil')
-  if (perfilError || !perfilRaw) redirect('/dashboard')
-
-  const perfil = perfilRaw as Perfil
+  const perfil = await getPerfil()
+  if (!perfil) redirect('/dashboard')
   const pagina = parseInt(params.pagina ?? '1', 10)
 
   const { data: historialRaw } = await supabase.rpc('sp_historial_movimientos', {
@@ -68,9 +61,12 @@ export default async function HistorialPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Historial de movimientos</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {perfil.centro} · {historial.total} registro{historial.total !== 1 ? 's' : ''}
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <h1 className="text-2xl font-bold">Historial de movimientos</h1>
+            <SelectorCentroHeader />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {historial.total} registro{historial.total !== 1 ? 's' : ''}
           </p>
         </div>
       </div>

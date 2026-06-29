@@ -1,13 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getPerfil } from '@/lib/supabase/perfil'
 import { FiltroCategoria } from '@/components/app/filtro-categoria'
-
-type Perfil = {
-  usuario_id: string
-  centro_id: string
-  centro: string
-  rol: string
-}
+import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
+import { createClient } from '@/lib/supabase/server'
 
 type ItemInventario = {
   id: string
@@ -27,10 +22,8 @@ export default async function InventarioPage({
   const params = await searchParams
   const supabase = await createClient()
 
-  const { data: perfilRaw, error: perfilError } = await supabase.rpc('sp_mi_perfil')
-  if (perfilError || !perfilRaw) redirect('/dashboard')
-
-  const perfil = perfilRaw as Perfil
+  const perfil = await getPerfil()
+  if (!perfil) redirect('/dashboard')
 
   const { data: inventarioRaw } = await supabase.rpc('sp_inventario_centro', {
     p_centro_id: perfil.centro_id,
@@ -50,9 +43,12 @@ export default async function InventarioPage({
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Inventario</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {perfil.centro} · {filtrado.length} insumo{filtrado.length !== 1 ? 's' : ''}
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <h1 className="text-2xl font-bold">Inventario</h1>
+            <SelectorCentroHeader />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {filtrado.length} insumo{filtrado.length !== 1 ? 's' : ''}
             {sinStock > 0 && (
               <span className="ml-2 text-destructive font-medium">· {sinStock} sin stock</span>
             )}

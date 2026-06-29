@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { CrearCentroForm } from './crear-centro-form'
 import { UnirseCentroForm } from './unirse-centro-form'
+import { BotonCerrarSesion } from '@/components/app/boton-cerrar-sesion'
 
 type SolicitudUnion = {
   id: string
@@ -16,10 +17,16 @@ export default async function BienvenidaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase.rpc('sp_mi_perfil')
+  const { data: perfil, error: perfilError } = await supabase.rpc('sp_mi_perfil')
+  if (perfilError) {
+    console.error('Error al obtener perfil en BienvenidaPage:', perfilError)
+  }
   if (perfil) redirect('/dashboard')
 
-  const { data: solicitudesRaw } = await supabase.rpc('sp_mis_solicitudes_union')
+  const { data: solicitudesRaw, error: solError } = await supabase.rpc('sp_mis_solicitudes_union')
+  if (solError) {
+    console.error('Error al obtener solicitudes de union en BienvenidaPage:', solError)
+  }
   const solicitudes = (solicitudesRaw as SolicitudUnion[] | null) ?? []
   const pendientes = solicitudes.filter((s) => s.estado === 'pendiente')
 
@@ -95,8 +102,23 @@ export default async function BienvenidaPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          ¿No eres tú? <a href="/login" className="underline">Cerrar sesión</a>
+          ¿No eres tú? <BotonCerrarSesion />
         </p>
+
+        {/* Sección de depuración para diagnosticar el problema de acceso */}
+        <div className="rounded-xl border bg-muted/30 p-5 mt-8 space-y-3 max-w-lg mx-auto">
+          <h3 className="text-sm font-semibold text-foreground">Depuración de Acceso (Debug Info)</h3>
+          <div className="text-xs space-y-1.5 text-muted-foreground font-mono bg-background/50 p-3 rounded border">
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Auth ID:</strong> {user.id}</p>
+            <p><strong>Perfil (sp_mi_perfil):</strong> {perfil ? JSON.stringify(perfil) : 'null'}</p>
+            <p><strong>Error Perfil:</strong> {perfilError ? JSON.stringify(perfilError) : 'ninguno'}</p>
+            <p><strong>Solicitudes:</strong> {JSON.stringify(solicitudes)}</p>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Nota: Si "Perfil" es null pero tienes centros asignados en la base de datos, intenta recargar la página limpia (Ctrl + F5) o cerrar sesión e iniciarla nuevamente.
+          </p>
+        </div>
       </div>
     </main>
   )

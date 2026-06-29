@@ -46,7 +46,11 @@ const adminItems = [
   { href: '/admin/bugs', label: 'Bugs reportados', icon: Bug },
 ]
 
-export function MobileNav({ rol }: { rol: string }) {
+interface MobileNavProps {
+  rol: string
+}
+
+export function MobileNav({ rol }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -74,6 +78,8 @@ export function MobileNav({ rol }: { rol: string }) {
             <SheetTitle className="text-left text-sm font-bold">Ayuda Humanitaria</SheetTitle>
             <p className="text-xs text-muted-foreground -mt-1">Venezuela</p>
           </SheetHeader>
+
+
 
           <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
             {navItems.map(({ href, label, icon: Icon }) => (

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getPerfil } from '@/lib/supabase/perfil'
 import { Sidebar } from '@/components/app/sidebar'
 import { MobileNav } from '@/components/app/mobile-nav'
 import { AppTour } from '@/components/app/app-tour'
@@ -10,10 +11,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
-  // Gate de onboarding: si el usuario no está asignado a ningún centro
-  // (y no es admin, que siempre tiene centro) lo mandamos a /bienvenida.
-  const { data: perfilRaw } = await supabase.rpc('sp_mi_perfil')
-  const perfil = perfilRaw as { rol: string } | null
+  // Obtiene perfil respetando el centro activo en cookie
+  const perfil = await getPerfil()
   if (!perfil) redirect('/bienvenida')
 
   return (

@@ -43,7 +43,11 @@ const adminItems = [
   { href: '/admin/bugs', label: 'Bugs reportados', icon: Bug },
 ]
 
-export function Sidebar({ rol }: { rol: string }) {
+interface SidebarProps {
+  rol: string
+}
+
+export function Sidebar({ rol }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -60,6 +64,8 @@ export function Sidebar({ rol }: { rol: string }) {
         <p className="font-bold text-sm text-sidebar-foreground">Ayuda Humanitaria</p>
         <p className="text-xs text-muted-foreground mt-0.5">Venezuela</p>
       </div>
+
+
 
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
         {navItems.map(({ href, label, icon: Icon, id }) => (

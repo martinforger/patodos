@@ -1,5 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { getPerfil } from '@/lib/supabase/perfil'
+import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
+import { createClient } from '@/lib/supabase/server'
 
 type KPIs = {
   centros_activos: number
@@ -11,6 +13,7 @@ type KPIs = {
 }
 
 export default async function DashboardPage() {
+  const perfil = await getPerfil()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -21,7 +24,10 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">Panel principal</h1>
+      <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+        <h1 className="text-2xl font-bold">Panel principal</h1>
+        <SelectorCentroHeader />
+      </div>
       <p className="text-muted-foreground text-sm mb-6">{user?.email}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

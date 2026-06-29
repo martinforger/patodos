@@ -1,13 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getPerfil } from '@/lib/supabase/perfil'
+import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
+import { createClient } from '@/lib/supabase/server'
 import { ExportarReporte } from '@/components/app/exportar-reporte'
-
-type Perfil = {
-  usuario_id: string
-  centro_id: string
-  centro: string
-  rol: string
-}
 
 type FilaInsumo = {
   insumo: string
@@ -57,10 +52,8 @@ export default async function ReportesPage({
   const params  = await searchParams
   const supabase = await createClient()
 
-  const { data: perfilRaw, error: perfilError } = await supabase.rpc('sp_mi_perfil')
-  if (perfilError || !perfilRaw) redirect('/dashboard')
-
-  const perfil = perfilRaw as Perfil
+  const perfil = await getPerfil()
+  if (!perfil) redirect('/dashboard')
 
   if (!puedeReporte(perfil.rol)) redirect('/dashboard')
 
@@ -86,12 +79,14 @@ export default async function ReportesPage({
         {/* Encabezado */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Reporte de movimientos</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {perfil.centro}
+            <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+              <h1 className="text-2xl font-bold">Reporte de movimientos</h1>
+              <SelectorCentroHeader />
+            </div>
+            <p className="text-sm text-muted-foreground">
               {params.desde && params.hasta
-                ? ` · ${new Date(params.desde).toLocaleDateString('es-VE')} – ${new Date(params.hasta).toLocaleDateString('es-VE')}`
-                : ' · Todos los períodos'}
+                ? `${new Date(params.desde).toLocaleDateString('es-VE')} – ${new Date(params.hasta).toLocaleDateString('es-VE')}`
+                : 'Todos los períodos'}
             </p>
           </div>
           {reporte && (
