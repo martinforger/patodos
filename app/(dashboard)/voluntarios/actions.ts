@@ -18,10 +18,10 @@ export async function registrarVoluntario(centroId: string, formData: unknown) {
     p_apellidos:           d.apellidos,
     p_nacionalidad:        d.nacionalidad,
     p_cedula_numero:       d.cedula_numero,
-    p_fecha_nacimiento:    d.fecha_nacimiento || null,
+    p_fecha_nacimiento:    d.fecha_nacimiento || undefined,
     p_telefono:            d.telefono,
-    p_telefono_emergencia: d.telefono_emergencia || null,
-    p_zona:                d.zona || null,
+    p_telefono_emergencia: d.telefono_emergencia || undefined,
+    p_zona:                d.zona || undefined,
   })
 
   if (error) return { ok: false, error: error.message }
