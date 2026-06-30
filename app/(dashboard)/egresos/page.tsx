@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { FormularioEgreso } from '@/components/app/formulario-egreso'
 import { TablaEgresos } from '@/components/app/tabla-egresos'
 import type { FilaEgreso } from '@/components/app/detalle-egreso-dialog'
+import type { SolicitudPendienteGrupo } from '@/components/app/formulario-egreso'
 
 type ListadoEgresos = {
   total: number
@@ -55,12 +56,7 @@ export default async function EgresosPage() {
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
           insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
           categoriasDestino={(categoriasDestino as { id: string; nombre: string }[]) ?? []}
-          solicitudesPendientes={(solicitudesPendientes as {
-            id: string; insumo_id: string; insumo: string; cantidad_solicitada: number
-            solicitante: string; fecha_solicitud: string; estado: string
-            destino_id: string | null; destino: string | null
-            destino_municipio: string | null; destino_estado_geo: string | null
-          }[]) ?? []}
+          solicitudesPendientes={(solicitudesPendientes as SolicitudPendienteGrupo[]) ?? []}
           inventario={(inventarioRaw as { insumo_id: string; insumo: string; stock: number }[]) ?? []}
         />
       </div>

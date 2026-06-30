@@ -19,19 +19,50 @@ import { BuscadorDestinoInline, type Destino } from '@/components/app/buscador-d
 import { type Insumo } from '@/components/app/buscador-insumo-inline'
 import { FilaInsumoEgreso, type ItemEgreso } from '@/components/app/fila-insumo-egreso'
 import { ESTADOS_VE } from '@/lib/constants/venezuela'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 
 type Categoria = { id: string; nombre: string }
 type CategoriaDestino = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 type Responsable = { persona_id: string | null; nombre: string; apellido: string; telefono: string }
+
+// Un ítem individual (insumo) dentro de una solicitud o lote pendiente.
+type ItemSolicitudPendiente = {
+  id: string
+  insumo_id: string
+  insumo: string
+  cantidad_solicitada: number
+  estado: string
+}
+
+// Una solicitud pendiente, posiblemente agrupando varios insumos (lote).
+export type SolicitudPendienteGrupo = {
+  id: string
+  lote_id: string | null
+  es_lote: boolean
+  num_insumos: number
+  fecha_solicitud: string
+  solicitante: string
+  tiene_parcial: boolean
+  destino_id: string | null
+  destino: string | null
+  destino_municipio: string | null
+  destino_estado_geo: string | null
+  items: ItemSolicitudPendiente[]
+}
+
+// Vista plana (un renglón por insumo) usada por el selector de cada fila de insumo.
 type SolicitudPendiente = {
   id: string; insumo_id: string; insumo: string
   cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string
-  destino_id: string | null; destino: string | null
-  destino_municipio?: string | null; destino_estado_geo?: string | null
 }
+
 type ItemInventario = { insumo_id: string; insumo: string; stock: number }
 type FaltanteInfo = { insumo: string; solicitado: number; disponible: number; falta: number }
+
+const SOLICITUD_NINGUNA = '__ninguna__'
 
 function traducirError(msg: string): string {
   if (msg.includes('persona_contacto_id'))
@@ -46,7 +77,7 @@ type Props = {
   categorias: Categoria[]
   insumos: Insumo[]
   categoriasDestino: CategoriaDestino[]
-  solicitudesPendientes?: SolicitudPendiente[]
+  solicitudesPendientes?: SolicitudPendienteGrupo[]
   inventario?: ItemInventario[]
 }
 
@@ -58,6 +89,19 @@ export function FormularioEgreso({
   const [error, setError] = useState<string | null>(null)
 
   const stockMap = Object.fromEntries(inventario.map(i => [i.insumo_id, i.stock]))
+
+  // Vista plana (un renglón por insumo) para el selector de vínculo en cada fila.
+  const solicitudesPlanas: SolicitudPendiente[] = solicitudesPendientes.flatMap(g =>
+    g.items.map(it => ({
+      id: it.id,
+      insumo_id: it.insumo_id,
+      insumo: it.insumo,
+      cantidad_solicitada: it.cantidad_solicitada,
+      solicitante: g.solicitante,
+      fecha_solicitud: g.fecha_solicitud,
+      estado: it.estado,
+    }))
+  )
 
   const [solicitudId, setSolicitudId] = useState('')
   const [faltantes, setFaltantes] = useState<FaltanteInfo[]>([])
@@ -136,24 +180,33 @@ export function FormularioEgreso({
     setSolicitudId(id)
     setFaltantes([])
     if (!id) { setItems([{ insumo_id: '', cantidad: '', solicitud_id: '' }]); return }
-    const sol = solicitudesPendientes.find(s => s.id === id)
-    if (!sol) return
-    const stock = stockMap[sol.insumo_id] ?? 0
-    const disponible = Math.min(stock, sol.cantidad_solicitada)
-    if (stock < sol.cantidad_solicitada) {
-      setFaltantes([{ insumo: sol.insumo, solicitado: sol.cantidad_solicitada, disponible: stock, falta: sol.cantidad_solicitada - stock }])
-    }
-    setItems([{ insumo_id: sol.insumo_id, cantidad: disponible > 0 ? disponible : '', solicitud_id: id }])
+    const grupo = solicitudesPendientes.find(g => g.id === id)
+    if (!grupo) return
+
+    const nuevosFaltantes: FaltanteInfo[] = []
+    const nuevosItems: ItemEgreso[] = grupo.items.map(it => {
+      const stock = stockMap[it.insumo_id] ?? 0
+      const disponible = Math.min(stock, it.cantidad_solicitada)
+      if (stock < it.cantidad_solicitada) {
+        nuevosFaltantes.push({
+          insumo: it.insumo, solicitado: it.cantidad_solicitada, disponible: stock,
+          falta: it.cantidad_solicitada - stock,
+        })
+      }
+      return { insumo_id: it.insumo_id, cantidad: disponible > 0 ? disponible : '', solicitud_id: it.id }
+    })
+    setFaltantes(nuevosFaltantes)
+    setItems(nuevosItems)
 
     // Si la solicitud trae un destino asociado, autocompletarlo.
-    if (sol.destino_id) {
+    if (grupo.destino_id) {
       setValue('destino_modo', 'existente')
-      setValue('destino_id', sol.destino_id)
+      setValue('destino_id', grupo.destino_id)
       setDestinoSeleccionado({
-        id: sol.destino_id,
-        nombre: sol.destino ?? '',
-        municipio: sol.destino_municipio ?? '',
-        estado_geo: sol.destino_estado_geo ?? '',
+        id: grupo.destino_id,
+        nombre: grupo.destino ?? '',
+        municipio: grupo.destino_municipio ?? '',
+        estado_geo: grupo.destino_estado_geo ?? '',
       })
     }
   }
@@ -399,52 +452,69 @@ export function FormularioEgreso({
                 Solicitud asociada{' '}
                 <span className="font-normal text-muted-foreground">(opcional)</span>
               </label>
-              <select
-                className={inputCls}
-                value={solicitudId}
-                onChange={(e) => seleccionarSolicitud(e.target.value)}
+              <Select
+                value={solicitudId || SOLICITUD_NINGUNA}
+                onValueChange={(v) => seleccionarSolicitud(v === SOLICITUD_NINGUNA ? '' : v)}
               >
-                <option value="">Sin solicitud — egreso libre</option>
-                {solicitudesPendientes.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.insumo} · {s.cantidad_solicitada.toLocaleString('es-VE')} · {s.solicitante}{' '}
-                    ({s.estado === 'pendiente' ? 'Pendiente' : 'Parcial'})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sin solicitud — egreso libre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SOLICITUD_NINGUNA}>Sin solicitud — egreso libre</SelectItem>
+                  {solicitudesPendientes.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.es_lote
+                        ? `${g.num_insumos} insumos (${g.items.map(it => it.insumo).join(', ')})`
+                        : g.items[0]?.insumo}
+                      {' · '}{g.solicitante}{' '}
+                      ({g.tiene_parcial ? 'Parcial' : 'Pendiente'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               {solicitudId && (() => {
-                const sol = solicitudesPendientes.find(s => s.id === solicitudId)!
-                const stock = stockMap[sol.insumo_id] ?? 0
-                const suficiente = stock >= sol.cantidad_solicitada
+                const grupo = solicitudesPendientes.find(g => g.id === solicitudId)
+                if (!grupo) return null
                 return (
-                  <div className={`rounded-md border px-3 py-2 text-sm space-y-1 ${
-                    suficiente
-                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                      : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
-                  }`}>
-                    <p className="font-medium">{sol.insumo}</p>
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                      <div>
-                        Solicitado por{' '}
-                        <span className="font-medium text-foreground">{sol.solicitante}</span>:{' '}
-                        <span className="font-medium text-foreground">
-                          {sol.cantidad_solicitada.toLocaleString('es-VE')}
-                        </span>
-                      </div>
-                      <div>
-                        En inventario:{' '}
-                        <span className={`font-medium ${suficiente ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                          {stock.toLocaleString('es-VE')}
-                        </span>
-                      </div>
-                      {suficiente
-                        ? <div className="text-green-700 dark:text-green-400 font-medium">Hay stock suficiente — insumos autocargados.</div>
-                        : <div className="text-amber-700 dark:text-amber-400 font-medium">
-                            Falta: {(sol.cantidad_solicitada - stock).toLocaleString('es-VE')} — se precargó lo disponible.
+                  <div className="space-y-1.5">
+                    {grupo.items.map(it => {
+                      const stock = stockMap[it.insumo_id] ?? 0
+                      const suficiente = stock >= it.cantidad_solicitada
+                      return (
+                        <div
+                          key={it.id}
+                          className={`rounded-md border px-3 py-2 text-sm space-y-1 ${
+                            suficiente
+                              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                              : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+                          }`}
+                        >
+                          <p className="font-medium">{it.insumo}</p>
+                          <div className="text-xs text-muted-foreground space-y-0.5">
+                            <div>
+                              Solicitado por{' '}
+                              <span className="font-medium text-foreground">{grupo.solicitante}</span>:{' '}
+                              <span className="font-medium text-foreground">
+                                {it.cantidad_solicitada.toLocaleString('es-VE')}
+                              </span>
+                            </div>
+                            <div>
+                              En inventario:{' '}
+                              <span className={`font-medium ${suficiente ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                {stock.toLocaleString('es-VE')}
+                              </span>
+                            </div>
+                            {suficiente
+                              ? <div className="text-green-700 dark:text-green-400 font-medium">Hay stock suficiente — insumo autocargado.</div>
+                              : <div className="text-amber-700 dark:text-amber-400 font-medium">
+                                  Falta: {(it.cantidad_solicitada - stock).toLocaleString('es-VE')} — se precargó lo disponible.
+                                </div>
+                            }
                           </div>
-                      }
-                    </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })()}
@@ -472,7 +542,7 @@ export function FormularioEgreso({
                   centroId={centroId}
                   categorias={categorias}
                   insumos={insumos}
-                  solicitudesPendientes={solicitudesPendientes}
+                  solicitudesPendientes={solicitudesPlanas}
                   stockMap={stockMap}
                   mostrarStock={afectaInventario}
                   onChange={actualizarItem}
