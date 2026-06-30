@@ -331,18 +331,18 @@ BEGIN
   ),
   agrupado AS (
     SELECT
-      CASE WHEN MAX(lote_id) IS NULL THEN MAX(id) ELSE MAX(lote_id) END AS id,
-      MAX(lote_id)               AS lote_id,
-      (MAX(lote_id) IS NOT NULL) AS es_lote,
-      COUNT(*)::int              AS num_insumos,
-      MAX(fecha_movimiento)      AS fecha_movimiento,
-      SUM(cantidad)              AS cantidad,
+      grp                                      AS id,
+      CASE WHEN bool_or(lote_id IS NOT NULL) THEN grp ELSE NULL END AS lote_id,
+      bool_or(lote_id IS NOT NULL)             AS es_lote,
+      COUNT(*)::int                            AS num_insumos,
+      MAX(fecha_movimiento)                    AS fecha_movimiento,
+      SUM(cantidad)                            AS cantidad,
       CASE WHEN COUNT(*) = 1 THEN MAX(insumo_nombre) ELSE NULL END AS insumo,
-      BOOL_AND(anulado)          AS anulado,
-      MAX(donante_nombre)        AS donante,
-      MAX(registrado_por)        AS registrado_por,
-      MAX(observaciones)         AS observaciones,
-      MAX(created_at)            AS created_at,
+      BOOL_AND(anulado)                        AS anulado,
+      MAX(donante_nombre)                      AS donante,
+      MAX(registrado_por)                      AS registrado_por,
+      MAX(observaciones)                       AS observaciones,
+      MAX(created_at)                          AS created_at,
       grp
     FROM base
     GROUP BY grp
@@ -351,7 +351,7 @@ BEGIN
   INTO v_rows
   FROM (
     SELECT id, lote_id, es_lote, num_insumos, fecha_movimiento, cantidad, insumo,
-           anulado, donante, registrado_por, observaciones
+           anulado, donante, registrado_por, observaciones, created_at
     FROM agrupado
     ORDER BY fecha_movimiento DESC, created_at DESC
     LIMIT p_por_pagina OFFSET v_offset
@@ -421,20 +421,20 @@ BEGIN
   ),
   agrupado AS (
     SELECT
-      CASE WHEN MAX(lote_id) IS NULL THEN MAX(id) ELSE MAX(lote_id) END AS id,
-      MAX(lote_id)               AS lote_id,
-      (MAX(lote_id) IS NOT NULL) AS es_lote,
-      COUNT(*)::int              AS num_insumos,
-      MAX(fecha_movimiento)      AS fecha_movimiento,
-      SUM(cantidad)              AS cantidad,
+      grp                                      AS id,
+      CASE WHEN bool_or(lote_id IS NOT NULL) THEN grp ELSE NULL END AS lote_id,
+      bool_or(lote_id IS NOT NULL)             AS es_lote,
+      COUNT(*)::int                            AS num_insumos,
+      MAX(fecha_movimiento)                    AS fecha_movimiento,
+      SUM(cantidad)                            AS cantidad,
       CASE WHEN COUNT(*) = 1 THEN MAX(insumo_nombre) ELSE NULL END AS insumo,
-      BOOL_AND(anulado)          AS anulado,
-      MAX(registrado_por)        AS registrado_por,
-      MAX(destino_nombre)        AS destino,
-      MAX(persona_contacto_nombre) AS persona_contacto,
-      MAX(observaciones)         AS observaciones,
-      MAX(created_at)            AS created_at,
-      MAX(detalle_egreso_id)     AS sample_detalle_id,
+      BOOL_AND(anulado)                        AS anulado,
+      MAX(registrado_por)                      AS registrado_por,
+      MAX(destino_nombre)                      AS destino,
+      MAX(persona_contacto_nombre)              AS persona_contacto,
+      MAX(observaciones)                       AS observaciones,
+      MAX(created_at)                          AS created_at,
+      (array_agg(detalle_egreso_id))[1]        AS sample_detalle_id,
       grp
     FROM base
     GROUP BY grp
@@ -445,7 +445,7 @@ BEGIN
     SELECT
       ag.id, ag.lote_id, ag.es_lote, ag.num_insumos, ag.fecha_movimiento,
       ag.cantidad, ag.insumo, ag.anulado, ag.registrado_por,
-      ag.destino, ag.persona_contacto, ag.observaciones,
+      ag.destino, ag.persona_contacto, ag.observaciones, ag.created_at,
       (
         SELECT COALESCE(jsonb_agg(DISTINCT
           CASE
@@ -535,13 +535,13 @@ BEGIN
   ),
   agrupado AS (
     SELECT
-      CASE WHEN MAX(lote_id) IS NULL THEN MAX(id) ELSE MAX(lote_id) END AS id,
-      MAX(lote_id)               AS lote_id,
-      (MAX(lote_id) IS NOT NULL) AS es_lote,
-      COUNT(*)::int              AS num_insumos,
-      MAX(fecha_solicitud)       AS fecha_solicitud,
-      SUM(cantidad_solicitada)   AS cantidad_solicitada,
-      SUM(cantidad_despachada)   AS cantidad_despachada,
+      grp                                      AS id,
+      CASE WHEN bool_or(lote_id IS NOT NULL) THEN grp ELSE NULL END AS lote_id,
+      bool_or(lote_id IS NOT NULL)             AS es_lote,
+      COUNT(*)::int                            AS num_insumos,
+      MAX(fecha_solicitud)                     AS fecha_solicitud,
+      SUM(cantidad_solicitada)                 AS cantidad_solicitada,
+      SUM(cantidad_despachada)                 AS cantidad_despachada,
       CASE WHEN COUNT(*) = 1 THEN MAX(insumo_nombre) ELSE NULL END AS insumo,
       CASE
         WHEN BOOL_AND(estado = 'completada')                             THEN 'completada'
@@ -556,11 +556,11 @@ BEGIN
         WHEN 4 THEN 'entregado'
         ELSE 'pendiente'
       END AS estado_entrega,
-      MAX(solicitante_nombre)    AS solicitante,
-      MAX(solicitante_telefono)  AS solicitante_telefono,
-      MAX(registrado_por)        AS registrado_por,
-      MAX(observaciones)         AS observaciones,
-      MAX(created_at)            AS created_at,
+      MAX(solicitante_nombre)                  AS solicitante,
+      MAX(solicitante_telefono)                AS solicitante_telefono,
+      MAX(registrado_por)                      AS registrado_por,
+      MAX(observaciones)                       AS observaciones,
+      MAX(created_at)                          AS created_at,
       grp
     FROM base
     GROUP BY grp
@@ -570,7 +570,7 @@ BEGIN
   FROM (
     SELECT id, lote_id, es_lote, num_insumos, fecha_solicitud,
            cantidad_solicitada, cantidad_despachada, insumo, estado, estado_entrega,
-           solicitante, solicitante_telefono, registrado_por, observaciones
+           solicitante, solicitante_telefono, registrado_por, observaciones, created_at
     FROM agrupado
     ORDER BY fecha_solicitud DESC, created_at DESC
     LIMIT p_por_pagina OFFSET v_offset
