@@ -104,21 +104,6 @@ export default async function BienvenidaPage() {
         <p className="text-center text-xs text-muted-foreground">
           ¿No eres tú? <BotonCerrarSesion />
         </p>
-
-        {/* Sección de depuración para diagnosticar el problema de acceso */}
-        <div className="rounded-xl border bg-muted/30 p-5 mt-8 space-y-3 max-w-lg mx-auto">
-          <h3 className="text-sm font-semibold text-foreground">Depuración de Acceso (Debug Info)</h3>
-          <div className="text-xs space-y-1.5 text-muted-foreground font-mono bg-background/50 p-3 rounded border">
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Auth ID:</strong> {user.id}</p>
-            <p><strong>Perfil (sp_mi_perfil):</strong> {perfil ? JSON.stringify(perfil) : 'null'}</p>
-            <p><strong>Error Perfil:</strong> {perfilError ? JSON.stringify(perfilError) : 'ninguno'}</p>
-            <p><strong>Solicitudes:</strong> {JSON.stringify(solicitudes)}</p>
-          </div>
-          <p className="text-[10px] text-muted-foreground">
-            Nota: Si "Perfil" es null pero tienes centros asignados en la base de datos, intenta recargar la página limpia (Ctrl + F5) o cerrar sesión e iniciarla nuevamente.
-          </p>
-        </div>
       </div>
     </main>
   )
