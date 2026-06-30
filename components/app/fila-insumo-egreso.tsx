@@ -90,8 +90,8 @@ export function FilaInsumoEgreso({
       <input
         className={inputCls}
         type="number"
-        step="0.01"
-        min="0.01"
+        step="1"
+        min="1"
         placeholder="Cantidad"
         value={item.cantidad}
         onChange={(e) => onChange(index, { cantidad: e.target.value === '' ? '' : Number(e.target.value) })}

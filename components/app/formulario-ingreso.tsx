@@ -176,8 +176,8 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
                 <input
                   className={inputCls}
                   type="number"
-                  step="0.01"
-                  min="0.01"
+                  step="1"
+                  min="1"
                   {...register('cantidad', { valueAsNumber: true })}
                 />
               </Field>
