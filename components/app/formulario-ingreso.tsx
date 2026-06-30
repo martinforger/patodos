@@ -14,18 +14,10 @@ import {
 } from '@/components/ui/dialog'
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { BuscadorPersonaInline } from '@/components/app/buscador-persona-inline'
+import { BuscadorInsumoInline, type Insumo } from '@/components/app/buscador-insumo-inline'
 
-type Insumo = { id: string; nombre: string; categoria: string; unidad_medida?: string | null }
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
-
-const UNIDADES_MEDIDA = [
-  'kg', 'g', 'L', 'mL', 'unidades', 'cajas', 'bolsas', 'paquetes', 'paletas', 'sacos',
-]
-
-function normalizarTexto(t: string) {
-  return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-}
 
 function traducirError(msg: string): string {
   if (/unique|duplicad/i.test(msg)) return 'Este insumo ya existe en el catálogo.'
@@ -33,23 +25,15 @@ function traducirError(msg: string): string {
   return msg
 }
 
-type Props = { centroId: string; categorias: Categoria[]; insumos: Insumo[] }
+type Props = { centroId: string; categorias: Categoria[] }
 
-export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
+export function FormularioIngreso({ centroId, categorias }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // — Insumo —
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
-  const [busquedaInsumo, setBusquedaInsumo] = useState('')
   const [insumoSeleccionado, setInsumoSeleccionado] = useState<Insumo | null>(null)
-  const [modoNuevoInsumo, setModoNuevoInsumo] = useState(false)
-  const [nuevoInsumoNombre, setNuevoInsumoNombre] = useState('')
-  const [nuevoInsumoCategoria, setNuevoInsumoCategoria] = useState('')
-  const [nuevoInsumoUnidad, setNuevoInsumoUnidad] = useState('')
-  const [nuevoInsumoUnidadPersonalizada, setNuevoInsumoUnidadPersonalizada] = useState('')
-  const [nuevoInsumoPresentacion, setNuevoInsumoPresentacion] = useState('')
-  const [creandoInsumo, setCreandoInsumo] = useState(false)
 
   // — Donante —
   const [personaSeleccionada, setPersonaSeleccionada] = useState<Persona | null>(null)
@@ -76,62 +60,6 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     if (donanteModo !== 'existente') setPersonaSeleccionada(null)
     if (donanteModo !== 'nuevo') resetPersona()
   }, [donanteModo, resetPersona])
-
-  const insumosFiltradosCategoria = categoriaSeleccionada
-    ? insumos.filter(i => i.categoria === categorias.find(c => c.id === categoriaSeleccionada)?.nombre)
-    : insumos
-
-  const insumosSugeridos = busquedaInsumo.length >= 1
-    ? insumosFiltradosCategoria
-        .filter(i => normalizarTexto(i.nombre).includes(normalizarTexto(busquedaInsumo)))
-        .slice(0, 8)
-    : []
-
-  function seleccionarInsumo(i: Insumo) {
-    setInsumoSeleccionado(i)
-    setValue('insumo_id', i.id)
-    setBusquedaInsumo('')
-    setModoNuevoInsumo(false)
-  }
-
-  function iniciarNuevoInsumo() {
-    setModoNuevoInsumo(true)
-    setNuevoInsumoNombre(busquedaInsumo)
-    setNuevoInsumoCategoria(categoriaSeleccionada)
-    setBusquedaInsumo('')
-  }
-
-  function cancelarNuevoInsumo() {
-    setModoNuevoInsumo(false)
-    setNuevoInsumoNombre('')
-    setNuevoInsumoCategoria('')
-    setNuevoInsumoUnidad('')
-    setNuevoInsumoUnidadPersonalizada('')
-    setNuevoInsumoPresentacion('')
-  }
-
-  async function confirmarNuevoInsumo() {
-    if (!nuevoInsumoNombre.trim() || !nuevoInsumoCategoria) {
-      setError('Complete nombre y categoría del insumo')
-      return
-    }
-    setCreandoInsumo(true)
-    setError(null)
-    const supabase = createClient()
-    const unidadFinal =
-      nuevoInsumoUnidad === '__otra__' ? nuevoInsumoUnidadPersonalizada.trim() : nuevoInsumoUnidad
-    const { data, error: rpcError } = await supabase.rpc('sp_crear_insumo', {
-      p_nombre: nuevoInsumoNombre.trim(),
-      p_categoria_id: nuevoInsumoCategoria,
-      ...(unidadFinal ? { p_unidad_medida: unidadFinal } : {}),
-      ...(nuevoInsumoPresentacion.trim() ? { p_presentacion: nuevoInsumoPresentacion.trim() } : {}),
-    })
-    setCreandoInsumo(false)
-    if (rpcError) { setError(traducirError(rpcError.message)); return }
-    const creado = data as { id: string; nombre: string; categoria: string }
-    seleccionarInsumo(creado)
-    cancelarNuevoInsumo()
-  }
 
   async function crearPersona(data: PersonaData): Promise<string | null> {
     const supabase = createClient()
@@ -186,10 +114,8 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
     reset()
     resetPersona()
     setPersonaSeleccionada(null)
-    setBusquedaInsumo('')
     setInsumoSeleccionado(null)
     setCategoriaSeleccionada('')
-    cancelarNuevoInsumo()
     setError(null)
     setAbierto(false)
   }
@@ -220,9 +146,7 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                 onChange={(e) => {
                   setCategoriaSeleccionada(e.target.value)
                   setInsumoSeleccionado(null)
-                  setBusquedaInsumo('')
                   setValue('insumo_id', '')
-                  setModoNuevoInsumo(false)
                 }}
               >
                 <option value="">Todas las categorías</option>
@@ -230,134 +154,17 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
               </select>
             </Field>
 
-            {/* Insumo — combobox con estados múltiples */}
+            {/* Insumo — buscador en vivo, scopeado al centro */}
             <div className="space-y-1">
               <p className="text-sm font-medium">Insumo *</p>
-              {insumoSeleccionado ? (
-                <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {insumoSeleccionado.nombre}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{insumoSeleccionado.categoria}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setInsumoSeleccionado(null); setBusquedaInsumo(''); setValue('insumo_id', '') }}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Cambiar
-                  </button>
-                </div>
-              ) : modoNuevoInsumo ? (
-                <div className="space-y-3 rounded-md border bg-muted/40 p-3">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nuevo insumo</p>
-                  <Field label="Nombre *">
-                    <input
-                      className={inputCls}
-                      value={nuevoInsumoNombre}
-                      onChange={(e) => setNuevoInsumoNombre(e.target.value)}
-                      autoFocus
-                    />
-                  </Field>
-                  <Field label="Presentación — cantidad por envase (opcional)">
-                    <input
-                      className={inputCls}
-                      placeholder="Ej: 500, 1, 2.5"
-                      value={nuevoInsumoPresentacion}
-                      onChange={(e) => setNuevoInsumoPresentacion(e.target.value)}
-                    />
-                  </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Unidad de medida (opcional)</label>
-                      <select
-                        className={inputCls}
-                        value={nuevoInsumoUnidad}
-                        onChange={(e) => {
-                          setNuevoInsumoUnidad(e.target.value)
-                          if (e.target.value !== '__otra__') setNuevoInsumoUnidadPersonalizada('')
-                        }}
-                      >
-                        <option value="">Sin unidad</option>
-                        {UNIDADES_MEDIDA.map(u => <option key={u} value={u}>{u}</option>)}
-                        <option value="__otra__">Otra…</option>
-                      </select>
-                      {nuevoInsumoUnidad === '__otra__' && (
-                        <input
-                          className={`${inputCls} mt-1.5`}
-                          placeholder="Escribe la unidad…"
-                          value={nuevoInsumoUnidadPersonalizada}
-                          onChange={(e) => setNuevoInsumoUnidadPersonalizada(e.target.value)}
-                          autoFocus
-                        />
-                      )}
-                    </div>
-                    <Field label="Categoría *">
-                      <select
-                        className={inputCls}
-                        value={nuevoInsumoCategoria}
-                        onChange={(e) => setNuevoInsumoCategoria(e.target.value)}
-                      >
-                        <option value="">Selecciona…</option>
-                        {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                      </select>
-                    </Field>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      type="button"
-                      onClick={cancelarNuevoInsumo}
-                      className="rounded-md border px-3 py-1.5 text-xs hover:bg-muted"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmarNuevoInsumo}
-                      disabled={creandoInsumo}
-                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                    >
-                      {creandoInsumo ? 'Creando…' : 'Crear insumo'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="relative">
-                  <input
-                    className={inputCls}
-                    placeholder="Escribe para buscar un insumo…"
-                    value={busquedaInsumo}
-                    onChange={(e) => setBusquedaInsumo(e.target.value)}
-                    autoComplete="off"
-                  />
-                  {(insumosSugeridos.length > 0 || busquedaInsumo.length >= 1) && (
-                    <ul className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow text-sm max-h-52 overflow-y-auto">
-                      {insumosSugeridos.map(i => (
-                        <li key={i.id} className="border-b last:border-b-0">
-                          <button
-                            type="button"
-                            onClick={() => seleccionarInsumo(i)}
-                            className="w-full px-3 py-2 text-left hover:bg-muted/50"
-                          >
-                            <span className="font-medium">{i.nombre}</span>
-                            <span className="ml-2 text-muted-foreground text-xs">{i.categoria}</span>
-                          </button>
-                        </li>
-                      ))}
-                      <li>
-                        <button
-                          type="button"
-                          onClick={iniciarNuevoInsumo}
-                          className="w-full px-3 py-2 text-left text-primary hover:bg-muted/50 font-medium"
-                        >
-                          + Crear &quot;{busquedaInsumo || 'nuevo insumo'}&quot;
-                        </button>
-                      </li>
-                    </ul>
-                  )}
-                </div>
-              )}
+              <BuscadorInsumoInline
+                centroId={centroId}
+                categorias={categorias}
+                categoriaFiltro={categoriaSeleccionada || undefined}
+                seleccionado={insumoSeleccionado}
+                onSelect={(i) => { setInsumoSeleccionado(i); setValue('insumo_id', i.id) }}
+                onCambiar={() => { setInsumoSeleccionado(null); setValue('insumo_id', '') }}
+              />
               {errors.insumo_id && (
                 <p className="text-xs text-destructive">{errors.insumo_id.message}</p>
               )}
@@ -369,7 +176,7 @@ export function FormularioIngreso({ centroId, categorias, insumos }: Props) {
                 <input
                   className={inputCls}
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0.01"
                   {...register('cantidad', { valueAsNumber: true })}
                 />

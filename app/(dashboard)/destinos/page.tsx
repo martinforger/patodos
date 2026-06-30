@@ -11,13 +11,24 @@ type Destino = {
   municipio: string
   estado_geo: string
   referencia: string | null
+  categoria_id: string | null
+  categoria: string | null
 }
+
+type CategoriaDestino = { id: string; nombre: string }
 
 async function getDestinos(centroId: string): Promise<Destino[]> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('sp_listar_destinos', { p_centro_id: centroId })
   if (error) throw new Error(error.message)
   return (data as Destino[]) ?? []
+}
+
+async function getCategoriasDestino(centroId: string): Promise<CategoriaDestino[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('sp_listar_categorias_destino', { p_centro_id: centroId })
+  if (error) throw new Error(error.message)
+  return (data as CategoriaDestino[]) ?? []
 }
 
 export default async function DestinosPage() {
@@ -27,6 +38,7 @@ export default async function DestinosPage() {
   if (!perfil) redirect('/dashboard')
 
   const destinos = await getDestinos(perfil.centro_id)
+  const categoriasDestino = await getCategoriasDestino(perfil.centro_id)
 
   return (
     <div>
@@ -40,7 +52,7 @@ export default async function DestinosPage() {
             Lugares a donde se despachan los egresos.
           </p>
         </div>
-        <FormularioDestino centroId={perfil.centro_id} />
+        <FormularioDestino centroId={perfil.centro_id} categoriasDestino={categoriasDestino} />
       </div>
 
       <div className="rounded-lg border overflow-hidden overflow-x-auto">
@@ -48,6 +60,7 @@ export default async function DestinosPage() {
           <thead className="bg-muted/50">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Nombre</th>
+              <th className="px-4 py-3 text-left font-medium">Categoría</th>
               <th className="px-4 py-3 text-left font-medium">Dirección</th>
               <th className="px-4 py-3 text-left font-medium">Municipio</th>
               <th className="px-4 py-3 text-left font-medium">Estado</th>
@@ -57,7 +70,7 @@ export default async function DestinosPage() {
           <tbody className="divide-y">
             {destinos.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   No hay destinos registrados aún.
                 </td>
               </tr>
@@ -65,6 +78,7 @@ export default async function DestinosPage() {
               destinos.map((d) => (
                 <tr key={d.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium">{d.nombre}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{d.categoria ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{d.direccion}</td>
                   <td className="px-4 py-3 text-muted-foreground">{d.municipio}</td>
                   <td className="px-4 py-3 text-muted-foreground">{d.estado_geo}</td>

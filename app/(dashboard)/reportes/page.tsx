@@ -41,6 +41,21 @@ type Reporte = {
   movimientos: FilaMovimiento[]
 }
 
+type FilaSolicitudPorDia = {
+  fecha: string
+  total: number
+  pendientes: number
+  parcialmente_atendidas: number
+  completadas: number
+  canceladas: number
+}
+
+type FilaEgresoCategoria = {
+  categoria: string
+  num_egresos: number
+  unidades: number
+}
+
 const puedeReporte = (rol: string) =>
   rol === 'coordinador_centro' || rol === 'administrador_sistema'
 
@@ -64,6 +79,20 @@ export default async function ReportesPage({
   })
 
   const reporte = reporteRaw as Reporte | null
+
+  const { data: solicitudesPorDiaRaw } = await supabase.rpc('sp_reporte_solicitudes_por_dia', {
+    p_centro_id:   perfil.centro_id,
+    p_fecha_desde: params.desde || undefined,
+    p_fecha_hasta: params.hasta || undefined,
+  })
+  const solicitudesPorDia = (solicitudesPorDiaRaw as FilaSolicitudPorDia[]) ?? []
+
+  const { data: egresosPorCategoriaRaw } = await supabase.rpc('sp_reporte_egresos_por_categoria_destino', {
+    p_centro_id:   perfil.centro_id,
+    p_fecha_desde: params.desde || undefined,
+    p_fecha_hasta: params.hasta || undefined,
+  })
+  const egresosPorCategoria = (egresosPorCategoriaRaw as FilaEgresoCategoria[]) ?? []
 
   return (
     <div>
@@ -245,6 +274,78 @@ export default async function ReportesPage({
                             {mov.tipo === 'egreso' ? mov.destino : (mov.donante ?? 'Anónimo')}
                           </td>
                           <td className="px-4 py-2.5 text-muted-foreground">{mov.registrado_por}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            {/* Solicitudes por día */}
+            <section className="mb-6">
+              <h2 className="text-base font-semibold mb-3">Solicitudes por día</h2>
+              {solicitudesPorDia.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">
+                  No hay solicitudes en el período seleccionado.
+                </p>
+              ) : (
+                <div className="rounded-lg border overflow-hidden overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Fecha</th>
+                        <th className="px-4 py-3 text-right font-medium">Total</th>
+                        <th className="px-4 py-3 text-right font-medium">Pendientes</th>
+                        <th className="px-4 py-3 text-right font-medium">Parciales</th>
+                        <th className="px-4 py-3 text-right font-medium">Completadas</th>
+                        <th className="px-4 py-3 text-right font-medium">Canceladas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {solicitudesPorDia.map((fila) => (
+                        <tr key={fila.fecha} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
+                            {new Date(fila.fecha).toLocaleDateString('es-VE')}
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums font-semibold">{fila.total}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{fila.pendientes}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{fila.parcialmente_atendidas}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-green-700">{fila.completadas}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-destructive">{fila.canceladas}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            {/* A dónde van los egresos, por categoría de destino */}
+            <section>
+              <h2 className="text-base font-semibold mb-3">A dónde van los egresos</h2>
+              {egresosPorCategoria.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">
+                  No hay egresos en el período seleccionado.
+                </p>
+              ) : (
+                <div className="rounded-lg border overflow-hidden overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Categoría de destino</th>
+                        <th className="px-4 py-3 text-right font-medium">Egresos</th>
+                        <th className="px-4 py-3 text-right font-medium">Unidades despachadas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {egresosPorCategoria.map((fila) => (
+                        <tr key={fila.categoria} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-2.5 font-medium">{fila.categoria}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">{fila.num_egresos}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-orange-700">
+                            {fila.unidades.toLocaleString('es-VE')}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

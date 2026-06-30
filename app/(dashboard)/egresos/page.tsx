@@ -38,8 +38,8 @@ export default async function EgresosPage() {
   const listado = (listadoRaw as ListadoEgresos) ?? { total: 0, pagina: 1, datos: [] }
 
   const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos')
-  const { data: insumos } = await supabase.rpc('sp_listar_insumos', { p_categoria_id: undefined })
-  const { data: destinos } = await supabase.rpc('sp_listar_destinos', { p_centro_id: perfil.centro_id })
+  const { data: insumos } = await supabase.rpc('sp_listar_insumos', { p_centro_id: perfil.centro_id })
+  const { data: categoriasDestino } = await supabase.rpc('sp_listar_categorias_destino', { p_centro_id: perfil.centro_id })
   const { data: solicitudesPendientes } = await supabase.rpc('sp_listar_solicitudes_pendientes', {
     p_centro_id: perfil.centro_id,
     p_insumo_id: undefined,
@@ -65,8 +65,13 @@ export default async function EgresosPage() {
           centroId={perfil.centro_id}
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
           insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
-          destinos={(destinos as { id: string; nombre: string; municipio: string; estado_geo: string }[]) ?? []}
-          solicitudesPendientes={(solicitudesPendientes as { id: string; insumo_id: string; insumo: string; cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string }[]) ?? []}
+          categoriasDestino={(categoriasDestino as { id: string; nombre: string }[]) ?? []}
+          solicitudesPendientes={(solicitudesPendientes as {
+            id: string; insumo_id: string; insumo: string; cantidad_solicitada: number
+            solicitante: string; fecha_solicitud: string; estado: string
+            destino_id: string | null; destino: string | null
+            destino_municipio: string | null; destino_estado_geo: string | null
+          }[]) ?? []}
           inventario={(inventarioRaw as { insumo_id: string; insumo: string; stock: number }[]) ?? []}
         />
       </div>

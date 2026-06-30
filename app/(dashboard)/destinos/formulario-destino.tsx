@@ -12,14 +12,18 @@ import {
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { ESTADOS_VE } from '@/lib/constants/venezuela'
 
+type CategoriaDestino = { id: string; nombre: string }
+
 function traducirError(msg: string): string {
   if (/unique|duplicad/i.test(msg)) return 'Ya existe un destino con ese nombre.'
   return msg
 }
 
-export function FormularioDestino({ centroId }: { centroId: string }) {
+export function FormularioDestino({ centroId, categoriasDestino }: { centroId: string; categoriasDestino: CategoriaDestino[] }) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [categoriaSeleccion, setCategoriaSeleccion] = useState('')
+  const [nuevaCategoriaNombre, setNuevaCategoriaNombre] = useState('')
   const router = useRouter()
 
   const {
@@ -30,11 +34,22 @@ export function FormularioDestino({ centroId }: { centroId: string }) {
   async function onSubmit(data: DestinoData) {
     setError(null)
     const supabase = createClient()
+
+    let categoriaId: string | undefined = categoriaSeleccion || undefined
+    if (categoriaSeleccion === '__nueva__') {
+      if (!nuevaCategoriaNombre.trim()) { setError('Escribe el nombre de la nueva categoría'); return }
+      const { data: catRes, error: catError } = await supabase.rpc('sp_crear_categoria_destino', {
+        p_centro_id: centroId, p_nombre: nuevaCategoriaNombre.trim(),
+      })
+      if (catError) { setError(catError.message); return }
+      categoriaId = (catRes as { id: string }).id
+    }
+
     const { error: rpcError } = await supabase.rpc('sp_crear_destino', {
       p_centro_id: centroId,
       p_nombre: data.nombre, p_direccion: data.direccion,
       p_municipio: data.municipio, p_estado_geo: data.estado_geo,
-      p_referencia: data.referencia || undefined,
+      p_categoria_id: categoriaId, p_referencia: data.referencia || undefined,
     })
     if (rpcError) { setError(traducirError(rpcError.message)); return }
     cerrar()
@@ -47,6 +62,8 @@ export function FormularioDestino({ centroId }: { centroId: string }) {
 
   function cerrar() {
     reset()
+    setCategoriaSeleccion('')
+    setNuevaCategoriaNombre('')
     setError(null)
     setAbierto(false)
   }
@@ -87,6 +104,27 @@ export function FormularioDestino({ centroId }: { centroId: string }) {
                 </select>
               </Field>
             </div>
+
+            <Field label="Categoría (opcional)">
+              <select
+                className={inputCls}
+                value={categoriaSeleccion}
+                onChange={(e) => setCategoriaSeleccion(e.target.value)}
+              >
+                <option value="">Sin categoría</option>
+                {categoriasDestino.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                <option value="__nueva__">+ Nueva categoría…</option>
+              </select>
+              {categoriaSeleccion === '__nueva__' && (
+                <input
+                  className={`${inputCls} mt-1.5`}
+                  placeholder="Nombre de la nueva categoría"
+                  value={nuevaCategoriaNombre}
+                  onChange={(e) => setNuevaCategoriaNombre(e.target.value)}
+                  autoFocus
+                />
+              )}
+            </Field>
 
             <Field label="Referencia (opcional)" error={errors.referencia?.message}>
               <input

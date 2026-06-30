@@ -1,8 +1,14 @@
 import { z } from 'zod'
 
-export const solicitudSchema = z.object({
+// Cada renglón de insumo solicitado en una misma solicitud (multi-insumo).
+export const itemSolicitudSchema = z.object({
   insumo_id: z.string().uuid('Seleccione un insumo'),
-  cantidad_solicitada: z.number().positive('Debe ser mayor a cero'),
+  cantidad: z.number().positive('Debe ser mayor a cero'),
+})
+
+export type ItemSolicitudData = z.infer<typeof itemSolicitudSchema>
+
+export const solicitudSchema = z.object({
   fecha: z.string().min(1, 'Fecha requerida'),
   solicitante_modo: z.enum(['existente', 'nuevo']),
   solicitante_id: z.string().uuid().optional(),

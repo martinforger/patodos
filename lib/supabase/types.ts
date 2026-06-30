@@ -56,6 +56,38 @@ export type Database = {
           },
         ]
       }
+      categoria_destino: {
+        Row: {
+          activo: boolean
+          centro_id: string
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          centro_id: string
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          centro_id?: string
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categoria_destino_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categoria_insumo: {
         Row: {
           activo: boolean
@@ -170,6 +202,7 @@ export type Database = {
       destino: {
         Row: {
           activo: boolean
+          categoria_id: string | null
           centro_id: string
           created_at: string
           direccion: string
@@ -182,6 +215,7 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          categoria_id?: string | null
           centro_id: string
           created_at?: string
           direccion: string
@@ -194,6 +228,7 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          categoria_id?: string | null
           centro_id?: string
           created_at?: string
           direccion?: string
@@ -205,6 +240,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "destino_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categoria_destino"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "destino_centro_id_fkey"
             columns: ["centro_id"]
@@ -297,6 +339,7 @@ export type Database = {
         Row: {
           activo: boolean
           categoria_id: string
+          centro_id: string
           created_at: string
           descripcion: string | null
           id: string
@@ -308,6 +351,7 @@ export type Database = {
         Insert: {
           activo?: boolean
           categoria_id: string
+          centro_id: string
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -319,6 +363,7 @@ export type Database = {
         Update: {
           activo?: boolean
           categoria_id?: string
+          centro_id?: string
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -333,6 +378,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categoria_insumo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insumo_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
             referencedColumns: ["id"]
           },
         ]
@@ -378,6 +430,7 @@ export type Database = {
       }
       movimiento: {
         Row: {
+          afecta_inventario: boolean
           anulado: boolean
           anulado_at: string | null
           anulado_motivo: string | null
@@ -393,6 +446,7 @@ export type Database = {
           usuario_id: string
         }
         Insert: {
+          afecta_inventario?: boolean
           anulado?: boolean
           anulado_at?: string | null
           anulado_motivo?: string | null
@@ -408,6 +462,7 @@ export type Database = {
           usuario_id: string
         }
         Update: {
+          afecta_inventario?: boolean
           anulado?: boolean
           anulado_at?: string | null
           anulado_motivo?: string | null
@@ -591,6 +646,7 @@ export type Database = {
           cantidad_solicitada: number
           centro_id: string
           created_at: string
+          destino_id: string | null
           estado: Database["public"]["Enums"]["estado_solicitud"]
           estado_entrega: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud: string
@@ -605,6 +661,7 @@ export type Database = {
           cantidad_solicitada: number
           centro_id: string
           created_at?: string
+          destino_id?: string | null
           estado?: Database["public"]["Enums"]["estado_solicitud"]
           estado_entrega?: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud?: string
@@ -619,6 +676,7 @@ export type Database = {
           cantidad_solicitada?: number
           centro_id?: string
           created_at?: string
+          destino_id?: string | null
           estado?: Database["public"]["Enums"]["estado_solicitud"]
           estado_entrega?: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud?: string
@@ -635,6 +693,13 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitud_destino_id_fkey"
+            columns: ["destino_id"]
+            isOneToOne: false
+            referencedRelation: "destino"
             referencedColumns: ["id"]
           },
           {
@@ -916,6 +981,18 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_buscar_destino: {
+        Args: { p_centro_id: string; p_termino: string }
+        Returns: Json
+      }
+      sp_buscar_insumo: {
+        Args: {
+          p_categoria_id?: string
+          p_centro_id: string
+          p_termino: string
+        }
+        Returns: Json
+      }
       sp_buscar_persona: {
         Args: { p_centro_id: string; p_termino: string }
         Returns: Json
@@ -929,6 +1006,10 @@ export type Database = {
         Returns: Json
       }
       sp_centro_nombre_publico: { Args: { p_centro_id: string }; Returns: Json }
+      sp_crear_categoria_destino: {
+        Args: { p_centro_id: string; p_nombre: string }
+        Returns: Json
+      }
       sp_crear_centro_acopio: {
         Args: {
           p_correo?: string
@@ -943,6 +1024,7 @@ export type Database = {
       }
       sp_crear_destino: {
         Args: {
+          p_categoria_id?: string
           p_centro_id: string
           p_direccion: string
           p_estado_geo: string
@@ -952,32 +1034,16 @@ export type Database = {
         }
         Returns: Json
       }
-      sp_crear_insumo:
-        | {
-            Args: {
-              p_categoria_id: string
-              p_nombre: string
-              p_unidad_medida?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_categoria_id: string
-              p_nombre: string
-              p_presentacion?: string
-              p_unidad_medida?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_categoria_id: string
-              p_nombre: string
-              p_unidad_medida: string
-            }
-            Returns: Json
-          }
+      sp_crear_insumo: {
+        Args: {
+          p_categoria_id: string
+          p_centro_id: string
+          p_nombre: string
+          p_presentacion?: string
+          p_unidad_medida?: string
+        }
+        Returns: Json
+      }
       sp_crear_persona: {
         Args: {
           p_apellido: string
@@ -1015,6 +1081,10 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_listar_categorias_destino: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
       sp_listar_categorias_insumos: { Args: never; Returns: Json }
       sp_listar_centros: { Args: never; Returns: Json }
       sp_listar_centros_publicos: { Args: never; Returns: Json }
@@ -1028,12 +1098,10 @@ export type Database = {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
         Returns: Json
       }
-      sp_listar_insumos:
-        | { Args: { p_categoria_id?: string }; Returns: Json }
-        | {
-            Args: { p_categoria_id?: string; p_centro_id?: string }
-            Returns: Json
-          }
+      sp_listar_insumos: {
+        Args: { p_categoria_id?: string; p_centro_id: string }
+        Returns: Json
+      }
       sp_listar_reportes_bug: { Args: never; Returns: Json }
       sp_listar_solicitudes: {
         Args: {
@@ -1104,6 +1172,7 @@ export type Database = {
       }
       sp_registrar_egreso_multiple: {
         Args: {
+          p_afecta_inventario?: boolean
           p_centro_id: string
           p_destino_id: string
           p_fecha: string
@@ -1137,6 +1206,17 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_registrar_solicitud_multiple: {
+        Args: {
+          p_centro_id: string
+          p_destino_id?: string
+          p_fecha?: string
+          p_items?: Json
+          p_observaciones?: string
+          p_solicitante_id: string
+        }
+        Returns: Json
+      }
       sp_registrar_voluntario: {
         Args: {
           p_apellidos: string
@@ -1152,6 +1232,22 @@ export type Database = {
         Returns: Json
       }
       sp_reporte_centro: {
+        Args: {
+          p_centro_id: string
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
+        }
+        Returns: Json
+      }
+      sp_reporte_egresos_por_categoria_destino: {
+        Args: {
+          p_centro_id: string
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
+        }
+        Returns: Json
+      }
+      sp_reporte_solicitudes_por_dia: {
         Args: {
           p_centro_id: string
           p_fecha_desde?: string

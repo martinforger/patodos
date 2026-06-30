@@ -43,6 +43,8 @@ export const egresoSchema = z.object({
   contacto_modo: z.enum(['existente', 'nuevo']),
   persona_contacto_id: uuidOpcional,
   observaciones: z.string().optional(),
+  // Si está marcado, ningún insumo de este egreso descuenta ni valida inventario.
+  afecta_inventario: z.boolean(),
 })
 
 export type EgresoData = z.infer<typeof egresoSchema>
