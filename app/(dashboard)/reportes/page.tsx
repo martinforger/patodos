@@ -9,6 +9,7 @@ type FilaInsumo = {
   categoria: string
   total_ingreso: number
   total_egreso: number
+  total_egreso_no_inventario: number
   stock_actual: number
 }
 
@@ -23,13 +24,16 @@ type FilaMovimiento = {
   destino: string | null
   donante: string | null
   observaciones: string | null
+  afecta_inventario: boolean
 }
 
 type Totales = {
   num_ingresos: number
   num_egresos: number
+  num_egresos_no_inventario: number
   total_ingresos: number
   total_egresos: number
+  total_egresos_no_inventario: number
 }
 
 type Reporte = {
@@ -175,14 +179,25 @@ export default async function ReportesPage({
               <h2 className="text-base font-semibold mb-3">Resumen ejecutivo</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: 'Registros de ingreso', value: reporte.totales.num_ingresos },
-                  { label: 'Registros de egreso',  value: reporte.totales.num_egresos },
-                  { label: 'Unidades recibidas',   value: reporte.totales.total_ingresos.toLocaleString('es-VE') },
-                  { label: 'Unidades despachadas', value: reporte.totales.total_egresos.toLocaleString('es-VE') },
-                ].map(({ label, value }) => (
+                  { label: 'Registros de ingreso', value: reporte.totales.num_ingresos, sub: null as string | null },
+                  {
+                    label: 'Registros de egreso', value: reporte.totales.num_egresos,
+                    sub: reporte.totales.num_egresos_no_inventario > 0
+                      ? `+${reporte.totales.num_egresos_no_inventario} sin afectar inventario`
+                      : null,
+                  },
+                  { label: 'Unidades recibidas', value: reporte.totales.total_ingresos.toLocaleString('es-VE'), sub: null },
+                  {
+                    label: 'Unidades despachadas', value: reporte.totales.total_egresos.toLocaleString('es-VE'),
+                    sub: reporte.totales.total_egresos_no_inventario > 0
+                      ? `+${reporte.totales.total_egresos_no_inventario.toLocaleString('es-VE')} sin afectar inventario`
+                      : null,
+                  },
+                ].map(({ label, value, sub }) => (
                   <div key={label} className="rounded-lg border bg-card p-4">
                     <p className="text-xs text-muted-foreground">{label}</p>
                     <p className="text-2xl font-bold mt-1">{value}</p>
+                    {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
                   </div>
                 ))}
               </div>
@@ -199,7 +214,8 @@ export default async function ReportesPage({
                         <th className="px-4 py-3 text-left font-medium">Categoría</th>
                         <th className="px-4 py-3 text-left font-medium">Insumo</th>
                         <th className="px-4 py-3 text-right font-medium">Ingresado</th>
-                        <th className="px-4 py-3 text-right font-medium">Egresado</th>
+                        <th className="px-4 py-3 text-right font-medium">Egresado (inventario)</th>
+                        <th className="px-4 py-3 text-right font-medium">Egresado (sin inventario)</th>
                         <th className="px-4 py-3 text-right font-medium">Stock actual</th>
                       </tr>
                     </thead>
@@ -213,6 +229,9 @@ export default async function ReportesPage({
                           </td>
                           <td className="px-4 py-2.5 text-right tabular-nums text-orange-700">
                             {fila.total_egreso.toLocaleString('es-VE')}
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
+                            {fila.total_egreso_no_inventario.toLocaleString('es-VE')}
                           </td>
                           <td className="px-4 py-2.5 text-right tabular-nums font-semibold">
                             {fila.stock_actual.toLocaleString('es-VE')}
@@ -263,6 +282,11 @@ export default async function ReportesPage({
                             >
                               {mov.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}
                             </span>
+                            {mov.tipo === 'egreso' && !mov.afecta_inventario && (
+                              <span className="ml-1.5 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
+                                Sin inventario
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-2.5 font-medium">
                             {mov.insumo}

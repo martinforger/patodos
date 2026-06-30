@@ -7,9 +7,11 @@ type KPIs = {
   centros_activos: number
   ingresos_hoy: number
   egresos_hoy: number
+  egresos_hoy_no_inventario: number
   solicitudes_pendientes: number
   ingresos_semana: number
   egresos_semana: number
+  egresos_semana_no_inventario: number
 }
 
 export default async function DashboardPage() {
@@ -32,14 +34,20 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Ingresos hoy',            value: kpis ? kpis.ingresos_hoy            : '—', color: kpis ? 'text-green-700'  : '' },
-          { label: 'Egresos hoy',             value: kpis ? kpis.egresos_hoy             : '—', color: kpis ? 'text-orange-700' : '' },
-          { label: 'Solicitudes pendientes',  value: kpis ? kpis.solicitudes_pendientes  : '—', color: kpis ? 'text-yellow-700' : '' },
-          { label: 'Centros activos',         value: kpis ? kpis.centros_activos         : '—', color: '' },
-        ].map(({ label, value, color }) => (
+          { label: 'Ingresos hoy',            value: kpis ? kpis.ingresos_hoy            : '—', color: kpis ? 'text-green-700'  : '', sub: null as string | null },
+          {
+            label: 'Egresos hoy', value: kpis ? kpis.egresos_hoy : '—', color: kpis ? 'text-orange-700' : '',
+            sub: kpis && kpis.egresos_hoy_no_inventario > 0
+              ? `+${kpis.egresos_hoy_no_inventario} sin afectar inventario`
+              : null,
+          },
+          { label: 'Solicitudes pendientes',  value: kpis ? kpis.solicitudes_pendientes  : '—', color: kpis ? 'text-yellow-700' : '', sub: null },
+          { label: 'Centros activos',         value: kpis ? kpis.centros_activos         : '—', color: '', sub: null },
+        ].map(({ label, value, color, sub }) => (
           <div key={label} className="rounded-lg border bg-card p-4">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+            {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
           </div>
         ))}
       </div>
@@ -53,6 +61,11 @@ export default async function DashboardPage() {
           <div className="rounded-lg border bg-card p-4">
             <p className="text-sm text-muted-foreground">Egresos esta semana</p>
             <p className="text-3xl font-bold mt-1 text-orange-700">{kpis.egresos_semana}</p>
+            {kpis.egresos_semana_no_inventario > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                +{kpis.egresos_semana_no_inventario} sin afectar inventario
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -6,9 +6,11 @@ type KPIs = {
   centros_activos: number
   ingresos_hoy: number
   egresos_hoy: number
+  egresos_hoy_no_inventario: number
   solicitudes_pendientes: number
   ingresos_semana: number
   egresos_semana: number
+  egresos_semana_no_inventario: number
 }
 
 type Centro = {
@@ -18,6 +20,7 @@ type Centro = {
   estado_geo: string
   ingresos_semana: number
   egresos_semana: number
+  egresos_semana_no_inventario: number
   solicitudes_pendientes: number
   insumos_con_stock: number
 }
@@ -58,16 +61,27 @@ export default async function PanelGeneralPage() {
         <h2 className="text-base font-semibold mb-3">Actividad global</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'Centros activos',        value: panel.kpis.centros_activos,       color: '' },
-            { label: 'Ingresos hoy',           value: panel.kpis.ingresos_hoy,          color: 'text-green-700' },
-            { label: 'Egresos hoy',            value: panel.kpis.egresos_hoy,           color: 'text-orange-700' },
-            { label: 'Ingresos esta semana',   value: panel.kpis.ingresos_semana,       color: 'text-green-700' },
-            { label: 'Egresos esta semana',    value: panel.kpis.egresos_semana,        color: 'text-orange-700' },
-            { label: 'Solicitudes pendientes', value: panel.kpis.solicitudes_pendientes, color: 'text-yellow-700' },
-          ].map(({ label, value, color }) => (
+            { label: 'Centros activos',        value: panel.kpis.centros_activos,       color: '', sub: null as string | null },
+            { label: 'Ingresos hoy',           value: panel.kpis.ingresos_hoy,          color: 'text-green-700', sub: null },
+            {
+              label: 'Egresos hoy', value: panel.kpis.egresos_hoy, color: 'text-orange-700',
+              sub: panel.kpis.egresos_hoy_no_inventario > 0
+                ? `+${panel.kpis.egresos_hoy_no_inventario} sin inventario`
+                : null,
+            },
+            { label: 'Ingresos esta semana',   value: panel.kpis.ingresos_semana,       color: 'text-green-700', sub: null },
+            {
+              label: 'Egresos esta semana', value: panel.kpis.egresos_semana, color: 'text-orange-700',
+              sub: panel.kpis.egresos_semana_no_inventario > 0
+                ? `+${panel.kpis.egresos_semana_no_inventario} sin inventario`
+                : null,
+            },
+            { label: 'Solicitudes pendientes', value: panel.kpis.solicitudes_pendientes, color: 'text-yellow-700', sub: null },
+          ].map(({ label, value, color, sub }) => (
             <div key={label} className="rounded-lg border bg-card p-4">
               <p className="text-xs text-muted-foreground leading-tight">{label}</p>
               <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+              {sub && <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{sub}</p>}
             </div>
           ))}
         </div>
@@ -104,6 +118,11 @@ export default async function PanelGeneralPage() {
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-orange-700 font-semibold">
                       {centro.egresos_semana}
+                      {centro.egresos_semana_no_inventario > 0 && (
+                        <span className="block text-[11px] font-normal text-muted-foreground">
+                          +{centro.egresos_semana_no_inventario} sin inv.
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
                       {centro.solicitudes_pendientes > 0 ? (
