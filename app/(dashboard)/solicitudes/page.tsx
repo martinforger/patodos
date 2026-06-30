@@ -71,7 +71,6 @@ export default async function SolicitudesPage() {
   const listado = (listadoRaw as ListadoSolicitudes) ?? { total: 0, pagina: 1, datos: [] }
 
   const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos')
-  const { data: insumos } = await supabase.rpc('sp_listar_insumos', { p_categoria_id: undefined })
 
   return (
     <div>
@@ -88,7 +87,6 @@ export default async function SolicitudesPage() {
         <FormularioSolicitud
           centroId={perfil.centro_id}
           categorias={(categorias as { id: string; nombre: string }[]) ?? []}
-          insumos={(insumos as { id: string; nombre: string; categoria: string }[]) ?? []}
         />
       </div>
 

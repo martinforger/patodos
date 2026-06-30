@@ -12,8 +12,9 @@ import {
 } from '@/components/ui/dialog'
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { BuscadorPersonaInline } from '@/components/app/buscador-persona-inline'
+import { BuscadorDestinoInline, type Destino } from '@/components/app/buscador-destino-inline'
+import { FilaInsumoSolicitud, type ItemSolicitud } from '@/components/app/fila-insumo-solicitud'
 
-type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 
@@ -23,18 +24,21 @@ function traducirError(msg: string): string {
   return msg
 }
 
-type Props = { centroId: string; categorias: Categoria[]; insumos: Insumo[] }
+type Props = { centroId: string; categorias: Categoria[] }
 
-export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
+export function FormularioSolicitud({ centroId, categorias }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
   const [solicitanteSeleccionado, setSolicitanteSeleccionado] = useState<Persona | null>(null)
+
+  const [items, setItems] = useState<ItemSolicitud[]>([{ insumo_id: '', cantidad: '' }])
+  const [sinDestino, setSinDestino] = useState(true)
+  const [destinoSeleccionado, setDestinoSeleccionado] = useState<Destino | null>(null)
 
   const router = useRouter()
 
   const {
-    register, handleSubmit, reset, watch, setValue,
+    register, handleSubmit, reset, watch,
     formState: { errors, isSubmitting },
   } = useForm<SolicitudData>({
     resolver: zodResolver(solicitudSchema),
@@ -49,9 +53,15 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
 
   const solicitanteModo = watch('solicitante_modo')
 
-  const insumosFiltrados = categoriaSeleccionada
-    ? insumos.filter(i => i.categoria === categorias.find(c => c.id === categoriaSeleccionada)?.nombre)
-    : insumos
+  function actualizarItem(index: number, patch: Partial<ItemSolicitud>) {
+    setItems(prev => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)))
+  }
+  function agregarItem() {
+    setItems(prev => [...prev, { insumo_id: '', cantidad: '' }])
+  }
+  function quitarItem(index: number) {
+    setItems(prev => prev.filter((_, i) => i !== index))
+  }
 
   async function crearPersona(data: PersonaData): Promise<string | null> {
     const supabase = createClient()
@@ -67,7 +77,16 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
 
   async function onSubmit(data: SolicitudData) {
     setError(null)
-    const supabase = createClient()
+
+    const itemsValidos = items.filter(it => it.insumo_id && it.cantidad !== '' && Number(it.cantidad) > 0)
+    if (itemsValidos.length === 0) {
+      setError('Agregue al menos un insumo con cantidad mayor a cero.')
+      return
+    }
+    if (new Set(itemsValidos.map(it => it.insumo_id)).size !== itemsValidos.length) {
+      setError('Hay insumos repetidos. Use un solo renglón por insumo.')
+      return
+    }
 
     let solicitanteId: string | null = null
     if (data.solicitante_modo === 'existente') {
@@ -82,11 +101,14 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
       if (!solicitanteId) { setError('Error al registrar el solicitante'); return }
     }
 
-    const { error: rpcError } = await supabase.rpc('sp_registrar_solicitud', {
-      p_centro_id: centroId, p_insumo_id: data.insumo_id,
-      p_cantidad_solicitada: data.cantidad_solicitada,
-      p_solicitante_id: solicitanteId ?? undefined,
-      p_fecha: data.fecha, p_observaciones: data.observaciones || undefined,
+    const supabase = createClient()
+    const { error: rpcError } = await supabase.rpc('sp_registrar_solicitud_multiple', {
+      p_centro_id: centroId,
+      p_solicitante_id: solicitanteId,
+      p_fecha: data.fecha,
+      p_destino_id: sinDestino ? undefined : (destinoSeleccionado?.id ?? undefined),
+      p_observaciones: data.observaciones || undefined,
+      p_items: itemsValidos.map(it => ({ insumo_id: it.insumo_id, cantidad: Number(it.cantidad) })),
     })
 
     if (rpcError) { setError(traducirError(rpcError.message)); return }
@@ -102,7 +124,9 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
     reset()
     resetSol()
     setSolicitanteSeleccionado(null)
-    setCategoriaSeleccionada('')
+    setItems([{ insumo_id: '', cantidad: '' }])
+    setSinDestino(true)
+    setDestinoSeleccionado(null)
     setError(null)
     setAbierto(false)
   }
@@ -125,40 +149,58 @@ export function FormularioSolicitud({ centroId, categorias, insumos }: Props) {
 
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
 
-            {/* Categoría — filtro local */}
-            <Field label="Categoría de insumo">
-              <select
-                className={inputCls}
-                value={categoriaSeleccionada}
-                onChange={(e) => { setCategoriaSeleccionada(e.target.value); setValue('insumo_id', '') }}
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-              </select>
-            </Field>
-
-            <Field label="Insumo solicitado *" error={errors.insumo_id?.message}>
-              <select className={inputCls} {...register('insumo_id')}>
-                <option value="">Seleccione un insumo…</option>
-                {insumosFiltrados.map(i => (
-                  <option key={i.id} value={i.id}>{i.nombre}</option>
-                ))}
-              </select>
-            </Field>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Cantidad *" error={errors.cantidad_solicitada?.message}>
-                <input
-                  className={inputCls}
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  {...register('cantidad_solicitada', { valueAsNumber: true })}
+            {/* Insumos solicitados */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Insumos solicitados *</p>
+              {items.map((it, idx) => (
+                <FilaInsumoSolicitud
+                  key={idx}
+                  item={it}
+                  index={idx}
+                  centroId={centroId}
+                  categorias={categorias}
+                  onChange={actualizarItem}
+                  onRemove={quitarItem}
+                  removable={items.length > 1}
                 />
-              </Field>
-              <Field label="Fecha *" error={errors.fecha?.message}>
-                <input className={inputCls} type="date" {...register('fecha')} />
-              </Field>
+              ))}
+              <button
+                type="button"
+                onClick={agregarItem}
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                + Agregar insumo
+              </button>
+            </div>
+
+            <Field label="Fecha *" error={errors.fecha?.message}>
+              <input className={inputCls} type="date" {...register('fecha')} />
+            </Field>
+
+            {/* Destino opcional */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                Destino <span className="font-normal text-muted-foreground">(opcional)</span>
+              </p>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sinDestino}
+                  onChange={(e) => { setSinDestino(e.target.checked); if (e.target.checked) setDestinoSeleccionado(null) }}
+                  className="accent-primary"
+                />
+                Sin destino específico
+              </label>
+              {!sinDestino && (
+                <div className="rounded-md bg-muted/40 p-3">
+                  <BuscadorDestinoInline
+                    centroId={centroId}
+                    seleccionado={destinoSeleccionado}
+                    onSelect={setDestinoSeleccionado}
+                    onCambiar={() => setDestinoSeleccionado(null)}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Solicitante */}

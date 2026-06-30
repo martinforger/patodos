@@ -8,4 +8,10 @@ export const destinoSchema = z.object({
   referencia: z.string().optional(),
 })
 
+export const categoriaDestinoSchema = z.object({
+  nombre: z.string().min(1, 'Nombre de la categoría requerido'),
+})
+
+export type CategoriaDestinoData = z.infer<typeof categoriaDestinoSchema>
+
 export type DestinoData = z.infer<typeof destinoSchema>

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { inputCls } from '@/components/app/form'
+import { BuscadorInsumoInline, type Insumo } from '@/components/app/buscador-insumo-inline'
 
-type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
 type SolicitudPendiente = {
-  id: string; insumo: string; cantidad_solicitada: number
+  id: string; insumo_id: string; insumo: string; cantidad_solicitada: number
   solicitante: string; fecha_solicitud: string; estado: string
 }
 
@@ -15,31 +15,42 @@ export type ItemEgreso = { insumo_id: string; cantidad: number | ''; solicitud_i
 type Props = {
   item: ItemEgreso
   index: number
+  centroId: string
   categorias: Categoria[]
   insumos: Insumo[]
   solicitudesPendientes: SolicitudPendiente[]
   stockMap: Record<string, number>
+  mostrarStock?: boolean
   onChange: (index: number, patch: Partial<ItemEgreso>) => void
   onRemove: (index: number) => void
   removable: boolean
 }
 
 export function FilaInsumoEgreso({
-  item, index, categorias, insumos, solicitudesPendientes, stockMap,
+  item, index, centroId, categorias, insumos, solicitudesPendientes, stockMap, mostrarStock = true,
   onChange, onRemove, removable,
 }: Props) {
   const [categoria, setCategoria] = useState('')
+  const [insumoSeleccionado, setInsumoSeleccionado] = useState<Insumo | null>(null)
 
-  const insumosFiltrados = categoria
-    ? insumos.filter(i => i.categoria === categorias.find(c => c.id === categoria)?.nombre)
-    : insumos
+  // Si insumo_id llega precargado (ej. autocompletado desde una solicitud
+  // vinculada) y aún no tenemos el objeto completo, resolverlo del catálogo.
+  useEffect(() => {
+    if (item.insumo_id && (!insumoSeleccionado || insumoSeleccionado.id !== item.insumo_id)) {
+      const encontrado = insumos.find(i => i.id === item.insumo_id)
+      if (encontrado) setInsumoSeleccionado(encontrado)
+    }
+    if (!item.insumo_id && insumoSeleccionado) {
+      setInsumoSeleccionado(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.insumo_id])
 
-  const insumoNombre = insumos.find(i => i.id === item.insumo_id)?.nombre
-  const solicitudesDelInsumo = insumoNombre
-    ? solicitudesPendientes.filter(s => s.insumo === insumoNombre)
+  const solicitudesDelInsumo = item.insumo_id
+    ? solicitudesPendientes.filter(s => s.insumo_id === item.insumo_id)
     : []
 
-  const stockDisponible = item.insumo_id ? (stockMap[item.insumo_id] ?? 0) : null
+  const stockDisponible = mostrarStock && item.insumo_id ? (stockMap[item.insumo_id] ?? 0) : null
   const cantidadNum = item.cantidad !== '' ? Number(item.cantidad) : 0
   const stockInsuficiente = stockDisponible !== null && cantidadNum > stockDisponible
 
@@ -58,35 +69,28 @@ export function FilaInsumoEgreso({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <select
-          className={inputCls}
-          value={categoria}
-          onChange={(e) => {
-            setCategoria(e.target.value)
-            onChange(index, { insumo_id: '', solicitud_id: '' })
-          }}
-        >
-          <option value="">Todas las categorías</option>
-          {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
+      <select
+        className={inputCls}
+        value={categoria}
+        onChange={(e) => setCategoria(e.target.value)}
+      >
+        <option value="">Todas las categorías</option>
+        {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+      </select>
 
-        <select
-          className={inputCls}
-          value={item.insumo_id}
-          onChange={(e) => onChange(index, { insumo_id: e.target.value, solicitud_id: '' })}
-        >
-          <option value="">Seleccione un insumo…</option>
-          {insumosFiltrados.map(i => (
-            <option key={i.id} value={i.id}>{i.nombre}</option>
-          ))}
-        </select>
-      </div>
+      <BuscadorInsumoInline
+        centroId={centroId}
+        categorias={categorias}
+        categoriaFiltro={categoria || undefined}
+        seleccionado={insumoSeleccionado}
+        onSelect={(i) => { setInsumoSeleccionado(i); onChange(index, { insumo_id: i.id, solicitud_id: '' }) }}
+        onCambiar={() => { setInsumoSeleccionado(null); onChange(index, { insumo_id: '', solicitud_id: '' }) }}
+      />
 
       <input
         className={inputCls}
         type="number"
-        step="0.01"
+        step="1"
         min="0.01"
         placeholder="Cantidad"
         value={item.cantidad}

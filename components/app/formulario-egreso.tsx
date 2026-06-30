@@ -15,17 +15,20 @@ import {
 } from '@/components/ui/dialog'
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { BuscadorPersonaInline } from '@/components/app/buscador-persona-inline'
+import { BuscadorDestinoInline, type Destino } from '@/components/app/buscador-destino-inline'
+import { type Insumo } from '@/components/app/buscador-insumo-inline'
 import { FilaInsumoEgreso, type ItemEgreso } from '@/components/app/fila-insumo-egreso'
 import { ESTADOS_VE } from '@/lib/constants/venezuela'
 
-type Insumo = { id: string; nombre: string; categoria: string }
 type Categoria = { id: string; nombre: string }
+type CategoriaDestino = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
-type Destino = { id: string; nombre: string; municipio: string; estado_geo: string }
 type Responsable = { persona_id: string | null; nombre: string; apellido: string; telefono: string }
 type SolicitudPendiente = {
   id: string; insumo_id: string; insumo: string
   cantidad_solicitada: number; solicitante: string; fecha_solicitud: string; estado: string
+  destino_id: string | null; destino: string | null
+  destino_municipio?: string | null; destino_estado_geo?: string | null
 }
 type ItemInventario = { insumo_id: string; insumo: string; stock: number }
 type FaltanteInfo = { insumo: string; solicitado: number; disponible: number; falta: number }
@@ -42,13 +45,13 @@ type Props = {
   centroId: string
   categorias: Categoria[]
   insumos: Insumo[]
-  destinos: Destino[]
+  categoriasDestino: CategoriaDestino[]
   solicitudesPendientes?: SolicitudPendiente[]
   inventario?: ItemInventario[]
 }
 
 export function FormularioEgreso({
-  centroId, categorias, insumos, destinos,
+  centroId, categorias, insumos, categoriasDestino,
   solicitudesPendientes = [], inventario = [],
 }: Props) {
   const [abierto, setAbierto] = useState(false)
@@ -61,6 +64,11 @@ export function FormularioEgreso({
   const [items, setItems] = useState<ItemEgreso[]>([{ insumo_id: '', cantidad: '', solicitud_id: '' }])
   const [confirmandoFaltantes, setConfirmandoFaltantes] = useState(false)
   const [submitPayload, setSubmitPayload] = useState<(() => Promise<void>) | null>(null)
+
+  // — Destino —
+  const [destinoSeleccionado, setDestinoSeleccionado] = useState<Destino | null>(null)
+  const [categoriaDestinoSeleccion, setCategoriaDestinoSeleccion] = useState('')
+  const [nuevaCategoriaDestinoNombre, setNuevaCategoriaDestinoNombre] = useState('')
 
   // — Contacto —
   const [contactoSeleccionado, setContactoSeleccionado] = useState<Persona | null>(null)
@@ -91,11 +99,14 @@ export function FormularioEgreso({
   }, [busquedaResp])
 
   const {
-    register, handleSubmit, reset, watch,
+    register, handleSubmit, reset, watch, setValue,
     formState: { errors, isSubmitting },
   } = useForm<EgresoData>({
     resolver: zodResolver(egresoSchema),
-    defaultValues: { fecha: new Date().toISOString().slice(0, 10), destino_modo: 'existente', contacto_modo: 'existente' },
+    defaultValues: {
+      fecha: new Date().toISOString().slice(0, 10), destino_modo: 'existente', contacto_modo: 'existente',
+      afecta_inventario: true,
+    },
   })
 
   const {
@@ -110,6 +121,7 @@ export function FormularioEgreso({
 
   const destinoModo = watch('destino_modo')
   const contactoModo = watch('contacto_modo')
+  const afectaInventario = watch('afecta_inventario')
 
   useEffect(() => {
     if (contactoModo !== 'existente') setContactoSeleccionado(null)
@@ -132,6 +144,18 @@ export function FormularioEgreso({
       setFaltantes([{ insumo: sol.insumo, solicitado: sol.cantidad_solicitada, disponible: stock, falta: sol.cantidad_solicitada - stock }])
     }
     setItems([{ insumo_id: sol.insumo_id, cantidad: disponible > 0 ? disponible : '', solicitud_id: id }])
+
+    // Si la solicitud trae un destino asociado, autocompletarlo.
+    if (sol.destino_id) {
+      setValue('destino_modo', 'existente')
+      setValue('destino_id', sol.destino_id)
+      setDestinoSeleccionado({
+        id: sol.destino_id,
+        nombre: sol.destino ?? '',
+        municipio: sol.destino_municipio ?? '',
+        estado_geo: sol.destino_estado_geo ?? '',
+      })
+    }
   }
 
   function actualizarItem(index: number, patch: Partial<ItemEgreso>) {
@@ -178,10 +202,24 @@ export function FormularioEgreso({
 
   async function crearDestino(data: DestinoData): Promise<string | null> {
     const supabase = createClient()
+
+    let categoriaId: string | undefined = categoriaDestinoSeleccion || undefined
+    if (categoriaDestinoSeleccion === '__nueva__') {
+      if (!nuevaCategoriaDestinoNombre.trim()) {
+        setError('Escribe el nombre de la nueva categoría de destino')
+        return null
+      }
+      const { data: catRes, error: catError } = await supabase.rpc('sp_crear_categoria_destino', {
+        p_centro_id: centroId, p_nombre: nuevaCategoriaDestinoNombre.trim(),
+      })
+      if (catError) { setError(catError.message); return null }
+      categoriaId = (catRes as { id: string }).id
+    }
+
     const { data: res, error } = await supabase.rpc('sp_crear_destino', {
       p_centro_id: centroId,
       p_nombre: data.nombre, p_direccion: data.direccion, p_municipio: data.municipio,
-      p_estado_geo: data.estado_geo, p_referencia: data.referencia || undefined,
+      p_estado_geo: data.estado_geo, p_categoria_id: categoriaId, p_referencia: data.referencia || undefined,
     })
     if (error) return null
     return (res as { id: string }).id
@@ -198,6 +236,7 @@ export function FormularioEgreso({
       p_centro_id: centroId, p_fecha: data.fecha, p_destino_id: destinoId,
       p_persona_contacto_id: contactoId, p_responsables: responsables,
       p_observaciones: data.observaciones || undefined, p_items: itemsPayload,
+      p_afecta_inventario: data.afecta_inventario,
     })
     if (rpcError) { setError(traducirError(rpcError.message)); return }
     cerrar()
@@ -269,6 +308,9 @@ export function FormularioEgreso({
     reset()
     resetDestino()
     resetContacto()
+    setDestinoSeleccionado(null)
+    setCategoriaDestinoSeleccion('')
+    setNuevaCategoriaDestinoNombre('')
     setContactoSeleccionado(null)
     setResponsables([])
     setRespManual({ nombre: '', apellido: '', telefono: '' })
@@ -408,6 +450,17 @@ export function FormularioEgreso({
               })()}
             </div>
 
+            {/* No afecta inventario */}
+            <label className="flex items-center gap-2 text-sm cursor-pointer rounded-md border bg-muted/30 px-3 py-2">
+              <input
+                type="checkbox"
+                checked={!afectaInventario}
+                onChange={(e) => setValue('afecta_inventario', !e.target.checked)}
+                className="accent-primary"
+              />
+              Este egreso no afecta el inventario (no descuenta ni valida stock)
+            </label>
+
             {/* Insumos a despachar */}
             <div className="space-y-2">
               <p className="text-sm font-medium">Insumos a despachar *</p>
@@ -416,10 +469,12 @@ export function FormularioEgreso({
                   key={idx}
                   item={it}
                   index={idx}
+                  centroId={centroId}
                   categorias={categorias}
                   insumos={insumos}
                   solicitudesPendientes={solicitudesPendientes}
                   stockMap={stockMap}
+                  mostrarStock={afectaInventario}
                   onChange={actualizarItem}
                   onRemove={quitarItem}
                   removable={items.length > 1}
@@ -453,16 +508,17 @@ export function FormularioEgreso({
             </div>
 
             {destinoModo === 'existente' ? (
-              <Field label="Seleccione destino" error={errors.destino_id?.message}>
-                <select className={inputCls} {...register('destino_id')}>
-                  <option value="">Seleccione un destino…</option>
-                  {destinos.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.nombre} — {d.municipio}, {d.estado_geo}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Seleccione destino</p>
+                <BuscadorDestinoInline
+                  centroId={centroId}
+                  seleccionado={destinoSeleccionado}
+                  onSelect={(d) => { setDestinoSeleccionado(d); setValue('destino_id', d.id) }}
+                  onCambiar={() => { setDestinoSeleccionado(null); setValue('destino_id', '') }}
+                  mensajeSinResultados='Sin resultados. Usa "Nuevo destino" para registrarlo.'
+                />
+                {errors.destino_id && <p className="text-xs text-destructive">{errors.destino_id.message}</p>}
+              </div>
             ) : (
               <div className="space-y-3 rounded-md bg-muted/40 p-3">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -485,6 +541,26 @@ export function FormularioEgreso({
                     </select>
                   </Field>
                 </div>
+                <Field label="Categoría (opcional)">
+                  <select
+                    className={inputCls}
+                    value={categoriaDestinoSeleccion}
+                    onChange={(e) => setCategoriaDestinoSeleccion(e.target.value)}
+                  >
+                    <option value="">Sin categoría</option>
+                    {categoriasDestino.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                    <option value="__nueva__">+ Nueva categoría…</option>
+                  </select>
+                  {categoriaDestinoSeleccion === '__nueva__' && (
+                    <input
+                      className={`${inputCls} mt-1.5`}
+                      placeholder="Nombre de la nueva categoría"
+                      value={nuevaCategoriaDestinoNombre}
+                      onChange={(e) => setNuevaCategoriaDestinoNombre(e.target.value)}
+                      autoFocus
+                    />
+                  )}
+                </Field>
                 <Field label="Referencia (opcional)" error={errorsDestino.referencia?.message}>
                   <input className={inputCls} placeholder="Indicaciones para llegar" {...regDestino('referencia')} />
                 </Field>
