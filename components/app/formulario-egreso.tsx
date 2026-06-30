@@ -459,15 +459,22 @@ export function FormularioEgreso({
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sin solicitud — egreso libre" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
                   <SelectItem value={SOLICITUD_NINGUNA}>Sin solicitud — egreso libre</SelectItem>
                   {solicitudesPendientes.map(g => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.es_lote
-                        ? `${g.num_insumos} insumos (${g.items.map(it => it.insumo).join(', ')})`
-                        : g.items[0]?.insumo}
-                      {' · '}{g.solicitante}{' '}
-                      ({g.tiene_parcial ? 'Parcial' : 'Pendiente'})
+                    <SelectItem key={g.id} value={g.id} className="whitespace-normal">
+                      <span className="flex flex-col items-start gap-0.5 text-left">
+                        <span>
+                          {g.es_lote ? `${g.num_insumos} insumos` : g.items[0]?.insumo}
+                          {' · '}{g.solicitante}{' '}
+                          ({g.tiene_parcial ? 'Parcial' : 'Pendiente'})
+                        </span>
+                        {g.es_lote && (
+                          <span className="text-xs text-muted-foreground break-words">
+                            {g.items.map(it => it.insumo).join(', ')}
+                          </span>
+                        )}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
