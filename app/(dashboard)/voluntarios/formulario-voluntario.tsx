@@ -20,8 +20,15 @@ export function FormularioVoluntario({ centroId }: Props) {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<VoluntarioData>({ resolver: zodResolver(voluntarioSchema) })
+  } = useForm<VoluntarioData>({
+    resolver: zodResolver(voluntarioSchema),
+    defaultValues: { tiene_laptop: false, tiene_vehiculo: false },
+  })
+
+  const vinculo = watch('vinculo_ucab')
+  const mostrarCarrera = vinculo === 'estudiante' || vinculo === 'egresado'
 
   async function onSubmit(data: VoluntarioData) {
     setError(null)
@@ -81,10 +88,6 @@ export function FormularioVoluntario({ centroId }: Props) {
             </div>
           </div>
 
-          <Field label="Fecha de nacimiento" error={errors.fecha_nacimiento?.message}>
-            <input className={inputCls} type="date" {...register('fecha_nacimiento')} />
-          </Field>
-
           <div className="grid grid-cols-2 gap-3">
             <Field label="Teléfono" error={errors.telefono?.message}>
               <input className={inputCls} placeholder="0414-1234567" {...register('telefono')} />
@@ -94,9 +97,51 @@ export function FormularioVoluntario({ centroId }: Props) {
             </Field>
           </div>
 
-          <Field label="Zona (opcional)" error={errors.zona?.message}>
-            <input className={inputCls} placeholder="Ej. Barrio El Carmen" {...register('zona')} />
+          <Field label="Turno" error={errors.turno?.message}>
+            <select className={inputCls} {...register('turno')}>
+              <option value="">— Selecciona —</option>
+              <option value="completo">Completo (9am – 5pm)</option>
+              <option value="manana">Mañana (9am – 1pm)</option>
+              <option value="tarde">Tarde (1pm – 5pm)</option>
+            </select>
           </Field>
+
+          <Field label="Vínculo UCAB" error={errors.vinculo_ucab?.message}>
+            <select className={inputCls} {...register('vinculo_ucab')}>
+              <option value="">— Selecciona —</option>
+              <option value="estudiante">Estudiante UCABISTA</option>
+              <option value="egresado">Egresado/a</option>
+              <option value="profesor_empleado">Profesor/a o Empleado/a</option>
+              <option value="externo">Externo a la UCAB</option>
+            </select>
+          </Field>
+
+          {mostrarCarrera && (
+            <Field label="Carrera" error={errors.carrera?.message}>
+              <input className={inputCls} placeholder="Ej. Ingeniería Informática" {...register('carrera')} />
+            </Field>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="¿Tiene laptop?" error={errors.tiene_laptop?.message}>
+              <select
+                className={inputCls}
+                {...register('tiene_laptop', { setValueAs: (v) => v === 'true' })}
+              >
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </select>
+            </Field>
+            <Field label="¿Tiene vehículo?" error={errors.tiene_vehiculo?.message}>
+              <select
+                className={inputCls}
+                {...register('tiene_vehiculo', { setValueAs: (v) => v === 'true' })}
+              >
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </select>
+            </Field>
+          </div>
 
           {error && (
             <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

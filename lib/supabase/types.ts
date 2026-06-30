@@ -1140,14 +1140,17 @@ export type Database = {
       sp_registrar_voluntario: {
         Args: {
           p_apellidos: string
+          p_carrera?: string
           p_cedula_numero: string
           p_centro_id: string
-          p_fecha_nacimiento?: string
           p_nacionalidad: string
           p_nombres: string
           p_telefono?: string
           p_telefono_emergencia?: string
-          p_zona?: string
+          p_tiene_laptop: boolean
+          p_tiene_vehiculo: boolean
+          p_turno: string
+          p_vinculo_ucab: string
         }
         Returns: Json
       }

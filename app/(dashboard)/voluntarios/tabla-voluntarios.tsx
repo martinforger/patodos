@@ -9,6 +9,19 @@ type Props = {
   voluntarios: Voluntario[]
 }
 
+const TURNO_LABEL: Record<string, string> = {
+  completo: 'Completo',
+  manana: 'Mañana',
+  tarde: 'Tarde',
+}
+
+const VINCULO_LABEL: Record<string, string> = {
+  estudiante: 'Estudiante',
+  egresado: 'Egresado/a',
+  profesor_empleado: 'Prof./Empl.',
+  externo: 'Externo',
+}
+
 export function TablaVoluntarios({ voluntarios }: Props) {
   if (voluntarios.length === 0) {
     return (
@@ -22,12 +35,16 @@ export function TablaVoluntarios({ voluntarios }: Props) {
 
   return (
     <div className="rounded-lg border overflow-hidden overflow-x-auto">
-      <table className="w-full min-w-[700px] text-sm">
+      <table className="w-full min-w-[900px] text-sm">
         <thead className="bg-muted/50">
           <tr>
             <th className="px-4 py-3 text-left font-medium">Voluntario</th>
             <th className="px-4 py-3 text-left font-medium">Cédula</th>
-            <th className="px-4 py-3 text-left font-medium">Zona</th>
+            <th className="px-4 py-3 text-left font-medium">Turno</th>
+            <th className="px-4 py-3 text-left font-medium">Vínculo</th>
+            <th className="px-4 py-3 text-left font-medium">Carrera</th>
+            <th className="px-4 py-3 text-center font-medium">Laptop</th>
+            <th className="px-4 py-3 text-center font-medium">Vehículo</th>
             <th className="px-4 py-3 text-center font-medium">Asistencia hoy</th>
             <th className="px-4 py-3 text-center font-medium">Comida 1</th>
             <th className="px-4 py-3 text-center font-medium">Comida 2</th>
@@ -86,7 +103,27 @@ function FilaVoluntario({ voluntario: v }: { voluntario: Voluntario }) {
         {v.nacionalidad}-{v.cedula_numero}
       </td>
       <td className="px-4 py-3 text-muted-foreground">
-        {v.zona ?? '—'}
+        {v.turno ? TURNO_LABEL[v.turno] ?? v.turno : '—'}
+      </td>
+      <td className="px-4 py-3 text-muted-foreground">
+        {v.vinculo_ucab ? VINCULO_LABEL[v.vinculo_ucab] ?? v.vinculo_ucab : '—'}
+      </td>
+      <td className="px-4 py-3 text-muted-foreground">
+        {v.carrera ?? '—'}
+      </td>
+      <td className="px-4 py-3 text-center">
+        {v.tiene_laptop ? (
+          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">Sí</span>
+        ) : (
+          <span className="text-muted-foreground/40">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-center">
+        {v.tiene_vehiculo ? (
+          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">Sí</span>
+        ) : (
+          <span className="text-muted-foreground/40">—</span>
+        )}
       </td>
       <td className="px-4 py-3 text-center">
         {asistencia ? (
