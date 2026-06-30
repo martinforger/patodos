@@ -599,11 +599,17 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
-  v_cab  jsonb;
+  v_cab   jsonb;
   v_items jsonb;
+  v_existe boolean;
 BEGIN
+  SELECT EXISTS (SELECT 1 FROM movimiento WHERE lote_id = p_lote_id AND tipo = 'ingreso') INTO v_existe;
+  IF NOT v_existe THEN
+    RAISE EXCEPTION 'Lote no encontrado: %', p_lote_id;
+  END IF;
+
   SELECT jsonb_build_object(
-    'lote_id',         MAX(m.lote_id),
+    'lote_id',         p_lote_id,
     'fecha',           MAX(m.fecha_movimiento),
     'registrado_por',  MAX(u.nombre || ' ' || u.apellido),
     'donante_anonimo', bool_and(di.donante_anonimo),
@@ -620,10 +626,6 @@ BEGIN
   JOIN detalle_ingreso di ON di.movimiento_id = m.id
   LEFT JOIN persona    p  ON p.id  = di.donante_id
   WHERE m.lote_id = p_lote_id AND m.tipo = 'ingreso';
-
-  IF v_cab IS NULL OR v_cab->>'lote_id' IS NULL THEN
-    RAISE EXCEPTION 'Lote no encontrado: %', p_lote_id;
-  END IF;
 
   SELECT jsonb_agg(jsonb_build_object(
     'id',             m.id,
@@ -656,12 +658,18 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
-  v_cab  jsonb;
-  v_resp jsonb;
+  v_cab   jsonb;
+  v_resp  jsonb;
   v_items jsonb;
+  v_existe boolean;
 BEGIN
+  SELECT EXISTS (SELECT 1 FROM movimiento WHERE lote_id = p_lote_id AND tipo = 'egreso') INTO v_existe;
+  IF NOT v_existe THEN
+    RAISE EXCEPTION 'Lote no encontrado: %', p_lote_id;
+  END IF;
+
   SELECT jsonb_build_object(
-    'lote_id',           MAX(m.lote_id),
+    'lote_id',           p_lote_id,
     'fecha',             MAX(m.fecha_movimiento),
     'registrado_por',    MAX(u.nombre || ' ' || u.apellido),
     'destino',           MAX(dst.nombre),
@@ -679,10 +687,6 @@ BEGIN
   JOIN destino        dst ON dst.id = de.destino_id
   LEFT JOIN persona   pc  ON pc.id  = de.persona_contacto_id
   WHERE m.lote_id = p_lote_id AND m.tipo = 'egreso';
-
-  IF v_cab IS NULL OR v_cab->>'lote_id' IS NULL THEN
-    RAISE EXCEPTION 'Lote no encontrado: %', p_lote_id;
-  END IF;
 
   SELECT COALESCE(jsonb_agg(DISTINCT
     CASE WHEN rp.id IS NOT NULL THEN rp.nombre || ' ' || rp.apellido
@@ -731,9 +735,15 @@ AS $$
 DECLARE
   v_cab   jsonb;
   v_items jsonb;
+  v_existe boolean;
 BEGIN
+  SELECT EXISTS (SELECT 1 FROM solicitud WHERE lote_id = p_lote_id) INTO v_existe;
+  IF NOT v_existe THEN
+    RAISE EXCEPTION 'Lote no encontrado: %', p_lote_id;
+  END IF;
+
   SELECT jsonb_build_object(
-    'lote_id',              MAX(s.lote_id),
+    'lote_id',              p_lote_id,
     'fecha',                MAX(s.fecha_solicitud),
     'registrado_por',       MAX(u.nombre || ' ' || u.apellido),
     'solicitante',          MAX(p.nombre || ' ' || p.apellido),
@@ -746,10 +756,6 @@ BEGIN
   JOIN persona p ON p.id = s.solicitante_id
   LEFT JOIN destino d ON d.id = s.destino_id
   WHERE s.lote_id = p_lote_id;
-
-  IF v_cab IS NULL OR v_cab->>'lote_id' IS NULL THEN
-    RAISE EXCEPTION 'Lote no encontrado: %', p_lote_id;
-  END IF;
 
   SELECT jsonb_agg(jsonb_build_object(
     'id',                  s.id,
