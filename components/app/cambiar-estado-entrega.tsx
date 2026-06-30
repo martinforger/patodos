@@ -19,9 +19,10 @@ type Props = {
   solicitudId: string
   estadoActual: EstadoEntrega
   observacionesActuales: string | null
+  onSuccess?: () => void
 }
 
-export function CambiarEstadoEntrega({ solicitudId, estadoActual, observacionesActuales }: Props) {
+export function CambiarEstadoEntrega({ solicitudId, estadoActual, observacionesActuales, onSuccess }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [estado, setEstado] = useState<EstadoEntrega>(estadoActual)
   const [observaciones, setObservaciones] = useState(observacionesActuales ?? '')
@@ -48,7 +49,11 @@ export function CambiarEstadoEntrega({ solicitudId, estadoActual, observacionesA
     setGuardando(false)
     if (rpcError) { setError(rpcError.message); return }
     cerrar()
-    router.refresh()
+    if (onSuccess) {
+      onSuccess()
+    } else {
+      router.refresh()
+    }
   }
 
   if (!abierto) {

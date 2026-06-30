@@ -11,13 +11,17 @@ export const personaSchema = z.object({
 
 export type PersonaData = z.infer<typeof personaSchema>
 
-export const ingresoSchema = z.object({
+export const itemIngresoSchema = z.object({
   insumo_id: z.string().uuid('Seleccione un insumo'),
   cantidad: z.number().positive('Debe ser mayor a cero'),
+})
+
+export type ItemIngresoData = z.infer<typeof itemIngresoSchema>
+
+export const ingresoSchema = z.object({
   fecha: z.string().min(1, 'Fecha requerida'),
   observaciones: z.string().optional(),
   donante_modo: z.enum(['anonimo', 'existente', 'nuevo']),
-  // Un <select>/campo vacío emite '' (no undefined); aceptarlo evita validación fallida invisible.
   donante_id: z.string().uuid().optional().or(z.literal('')),
   donante: personaSchema.optional(),
 })

@@ -3,24 +3,13 @@ import { getPerfil } from '@/lib/supabase/perfil'
 import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
 import { createClient } from '@/lib/supabase/server'
 import { FormularioEgreso } from '@/components/app/formulario-egreso'
-
-type Egreso = {
-  id: string
-  fecha_movimiento: string
-  cantidad: number
-  insumo: string
-  destino: string
-  persona_contacto: string
-  responsables: string[]
-  registrado_por: string
-  observaciones: string | null
-  anulado: boolean
-}
+import { TablaEgresos } from '@/components/app/tabla-egresos'
+import type { FilaEgreso } from '@/components/app/detalle-egreso-dialog'
 
 type ListadoEgresos = {
   total: number
   pagina: number
-  datos: Egreso[]
+  datos: FilaEgreso[]
 }
 
 export default async function EgresosPage() {
@@ -76,63 +65,7 @@ export default async function EgresosPage() {
         />
       </div>
 
-      <div className="rounded-lg border overflow-hidden overflow-x-auto">
-        <table className="w-full min-w-[700px] text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">Fecha</th>
-              <th className="px-4 py-3 text-left font-medium">Insumo</th>
-              <th className="px-4 py-3 text-right font-medium">Cantidad</th>
-              <th className="px-4 py-3 text-left font-medium">Destino</th>
-              <th className="px-4 py-3 text-left font-medium">Responsables</th>
-              <th className="px-4 py-3 text-left font-medium">Registrado por</th>
-              <th className="px-4 py-3 text-left font-medium">Estado</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {listado.datos.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  No hay egresos registrados aún.
-                </td>
-              </tr>
-            ) : (
-              listado.datos.map((eg) => (
-                <tr
-                  key={eg.id}
-                  className={`hover:bg-muted/30 transition-colors ${eg.anulado ? 'opacity-50' : ''}`}
-                >
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                    {new Date(eg.fecha_movimiento).toLocaleDateString('es-VE')}
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    {eg.insumo}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {eg.cantidad.toLocaleString('es-VE')}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{eg.destino}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {eg.responsables && eg.responsables.length > 0 ? eg.responsables.join(', ') : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{eg.registrado_por}</td>
-                  <td className="px-4 py-3">
-                    {eg.anulado ? (
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">
-                        Anulado
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                        Activo
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <TablaEgresos filas={listado.datos} />
     </div>
   )
 }

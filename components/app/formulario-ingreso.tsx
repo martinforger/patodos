@@ -14,13 +14,12 @@ import {
 } from '@/components/ui/dialog'
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { BuscadorPersonaInline } from '@/components/app/buscador-persona-inline'
-import { BuscadorInsumoInline, type Insumo } from '@/components/app/buscador-insumo-inline'
+import { FilaInsumoSolicitud, type ItemSolicitud } from '@/components/app/fila-insumo-solicitud'
 
 type Categoria = { id: string; nombre: string }
 type Persona = { id: string; nombre: string; apellido: string; telefono: string; cedula: string | null }
 
 function traducirError(msg: string): string {
-  if (/unique|duplicad/i.test(msg)) return 'Este insumo ya existe en el catálogo.'
   if (/stock|inventario|insuficiente/i.test(msg)) return 'Stock insuficiente para registrar el movimiento.'
   return msg
 }
@@ -30,18 +29,13 @@ type Props = { centroId: string; categorias: Categoria[] }
 export function FormularioIngreso({ centroId, categorias }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // — Insumo —
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
-  const [insumoSeleccionado, setInsumoSeleccionado] = useState<Insumo | null>(null)
-
-  // — Donante —
+  const [items, setItems] = useState<ItemSolicitud[]>([{ insumo_id: '', cantidad: '' }])
   const [personaSeleccionada, setPersonaSeleccionada] = useState<Persona | null>(null)
 
   const router = useRouter()
 
   const {
-    register, handleSubmit, reset, watch, setValue,
+    register, handleSubmit, reset, watch,
     formState: { errors, isSubmitting },
   } = useForm<IngresoData>({
     resolver: zodResolver(ingresoSchema),
@@ -61,6 +55,16 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
     if (donanteModo !== 'nuevo') resetPersona()
   }, [donanteModo, resetPersona])
 
+  function actualizarItem(index: number, patch: Partial<ItemSolicitud>) {
+    setItems(prev => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)))
+  }
+  function agregarItem() {
+    setItems(prev => [...prev, { insumo_id: '', cantidad: '' }])
+  }
+  function quitarItem(index: number) {
+    setItems(prev => prev.filter((_, i) => i !== index))
+  }
+
   async function crearPersona(data: PersonaData): Promise<string | null> {
     const supabase = createClient()
     const { data: res, error } = await supabase.rpc('sp_crear_persona', {
@@ -75,7 +79,16 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
 
   async function onSubmit(data: IngresoData) {
     setError(null)
-    const supabase = createClient()
+
+    const itemsValidos = items.filter(it => it.insumo_id && it.cantidad !== '' && Number(it.cantidad) > 0)
+    if (itemsValidos.length === 0) {
+      setError('Agregue al menos un insumo con cantidad mayor a cero.')
+      return
+    }
+    if (new Set(itemsValidos.map(it => it.insumo_id)).size !== itemsValidos.length) {
+      setError('Hay insumos repetidos. Use un solo renglón por insumo.')
+      return
+    }
 
     let donanteId: string | null = null
     let donanteAnonimo = false
@@ -90,15 +103,19 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
       if (!valid) { setError('Complete los datos del donante'); return }
       const parsed = personaSchema.safeParse(getValuesPersona())
       if (!parsed.success) { setError('Datos del donante inválidos'); return }
-      const nuevaPersonaId = await crearPersona(parsed.data)
-      if (!nuevaPersonaId) { setError('Error al registrar el donante'); return }
-      donanteId = nuevaPersonaId
+      const nuevaId = await crearPersona(parsed.data)
+      if (!nuevaId) { setError('Error al registrar el donante'); return }
+      donanteId = nuevaId
     }
 
-    const { error: rpcError } = await supabase.rpc('sp_registrar_ingreso', {
-      p_centro_id: centroId, p_insumo_id: data.insumo_id, p_cantidad: data.cantidad,
-      p_fecha: data.fecha, p_donante_id: donanteId ?? undefined,
-      p_donante_anonimo: donanteAnonimo, p_observaciones: data.observaciones || undefined,
+    const supabase = createClient()
+    const { error: rpcError } = await supabase.rpc('sp_registrar_ingreso_multiple', {
+      p_centro_id: centroId,
+      p_fecha: data.fecha,
+      p_donante_id: donanteId ?? undefined,
+      p_donante_anonimo: donanteAnonimo,
+      p_observaciones: data.observaciones || undefined,
+      p_items: itemsValidos.map(it => ({ insumo_id: it.insumo_id, cantidad: Number(it.cantidad) })),
     })
 
     if (rpcError) { setError(traducirError(rpcError.message)); return }
@@ -114,8 +131,7 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
     reset()
     resetPersona()
     setPersonaSeleccionada(null)
-    setInsumoSeleccionado(null)
-    setCategoriaSeleccionada('')
+    setItems([{ insumo_id: '', cantidad: '' }])
     setError(null)
     setAbierto(false)
   }
@@ -138,53 +154,33 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
 
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
 
-            {/* Categoría — filtro local, no obligatorio */}
-            <Field label="Categoría de insumo">
-              <select
-                className={inputCls}
-                value={categoriaSeleccionada}
-                onChange={(e) => {
-                  setCategoriaSeleccionada(e.target.value)
-                  setInsumoSeleccionado(null)
-                  setValue('insumo_id', '')
-                }}
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-              </select>
-            </Field>
-
-            {/* Insumo — buscador en vivo, scopeado al centro */}
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Insumo *</p>
-              <BuscadorInsumoInline
-                centroId={centroId}
-                categorias={categorias}
-                categoriaFiltro={categoriaSeleccionada || undefined}
-                seleccionado={insumoSeleccionado}
-                onSelect={(i) => { setInsumoSeleccionado(i); setValue('insumo_id', i.id) }}
-                onCambiar={() => { setInsumoSeleccionado(null); setValue('insumo_id', '') }}
-              />
-              {errors.insumo_id && (
-                <p className="text-xs text-destructive">{errors.insumo_id.message}</p>
-              )}
-            </div>
-
-            {/* Cantidad y fecha */}
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Cantidad *" error={errors.cantidad?.message}>
-                <input
-                  className={inputCls}
-                  type="number"
-                  step="1"
-                  min="1"
-                  {...register('cantidad', { valueAsNumber: true })}
+            {/* Insumos */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Insumos recibidos *</p>
+              {items.map((it, idx) => (
+                <FilaInsumoSolicitud
+                  key={idx}
+                  item={it}
+                  index={idx}
+                  centroId={centroId}
+                  categorias={categorias}
+                  onChange={actualizarItem}
+                  onRemove={quitarItem}
+                  removable={items.length > 1}
                 />
-              </Field>
-              <Field label="Fecha *" error={errors.fecha?.message}>
-                <input className={inputCls} type="date" {...register('fecha')} />
-              </Field>
+              ))}
+              <button
+                type="button"
+                onClick={agregarItem}
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                + Agregar insumo
+              </button>
             </div>
+
+            <Field label="Fecha *" error={errors.fecha?.message}>
+              <input className={inputCls} type="date" {...register('fecha')} />
+            </Field>
 
             {/* Donante */}
             <div className="space-y-2">
@@ -209,8 +205,8 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
                 <BuscadorPersonaInline
                   centroId={centroId}
                   seleccionado={personaSeleccionada}
-                  onSelect={(p) => { setPersonaSeleccionada(p); setValue('donante_id', p.id) }}
-                  onCambiar={() => { setPersonaSeleccionada(null); setValue('donante_id', '') }}
+                  onSelect={(p) => setPersonaSeleccionada(p)}
+                  onCambiar={() => setPersonaSeleccionada(null)}
                   mensajeSinResultados='Sin resultados. Usa "Nuevo donante" para registrarlo.'
                 />
               </div>
@@ -243,7 +239,6 @@ export function FormularioIngreso({ centroId, categorias }: Props) {
               </div>
             )}
 
-            {/* Observaciones */}
             <Field label="Observaciones (opcional)" error={errors.observaciones?.message}>
               <textarea className={inputCls} rows={2} {...register('observaciones')} />
             </Field>

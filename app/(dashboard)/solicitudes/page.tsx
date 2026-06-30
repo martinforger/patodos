@@ -3,56 +3,13 @@ import { getPerfil } from '@/lib/supabase/perfil'
 import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
 import { createClient } from '@/lib/supabase/server'
 import { FormularioSolicitud } from '@/components/app/formulario-solicitud'
-import { CambiarEstadoEntrega } from '@/components/app/cambiar-estado-entrega'
-
-type EstadoEntrega = 'pendiente' | 'embalado' | 'enviado' | 'entregado'
-
-type Solicitud = {
-  id: string
-  fecha_solicitud: string
-  cantidad_solicitada: number
-  cantidad_despachada: number
-  insumo: string
-  solicitante: string
-  solicitante_telefono: string
-  estado: 'pendiente' | 'parcialmente_atendida' | 'completada' | 'cancelada'
-  estado_entrega: EstadoEntrega
-  registrado_por: string
-  observaciones: string | null
-}
+import { TablaSolicitudes } from '@/components/app/tabla-solicitudes'
+import type { FilaSolicitud } from '@/components/app/detalle-solicitud-dialog'
 
 type ListadoSolicitudes = {
   total: number
   pagina: number
-  datos: Solicitud[]
-}
-
-const estadoBadge: Record<Solicitud['estado'], string> = {
-  pendiente: 'bg-yellow-100 text-yellow-700',
-  parcialmente_atendida: 'bg-blue-100 text-blue-700',
-  completada: 'bg-green-100 text-green-700',
-  cancelada: 'bg-destructive/10 text-destructive',
-}
-
-const estadoLabel: Record<Solicitud['estado'], string> = {
-  pendiente: 'Pendiente',
-  parcialmente_atendida: 'Parcial',
-  completada: 'Completada',
-  cancelada: 'Cancelada',
-}
-
-const entregaBadge: Record<EstadoEntrega, string> = {
-  pendiente: 'bg-muted text-muted-foreground',
-  embalado: 'bg-amber-100 text-amber-700',
-  enviado: 'bg-blue-100 text-blue-700',
-  entregado: 'bg-green-100 text-green-700',
-}
-
-const entregaLabel: Record<EstadoEntrega, string> = {
-  pendiente: 'Pendiente',
-  embalado: 'Embalado',
-  enviado: 'Enviado',
-  entregado: 'Entregado',
+  datos: FilaSolicitud[]
 }
 
 export default async function SolicitudesPage() {
@@ -90,72 +47,7 @@ export default async function SolicitudesPage() {
         />
       </div>
 
-      <div className="rounded-lg border overflow-hidden overflow-x-auto">
-        <table className="w-full min-w-[700px] text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">Fecha</th>
-              <th className="px-4 py-3 text-left font-medium">Insumo</th>
-              <th className="px-4 py-3 text-right font-medium">Solicitado</th>
-              <th className="px-4 py-3 text-right font-medium">Despachado</th>
-              <th className="px-4 py-3 text-left font-medium">Solicitante</th>
-              <th className="px-4 py-3 text-left font-medium">Registrado por</th>
-              <th className="px-4 py-3 text-left font-medium">Estado</th>
-              <th className="px-4 py-3 text-left font-medium">Entrega</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {listado.datos.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
-                  No hay solicitudes registradas aún.
-                </td>
-              </tr>
-            ) : (
-              listado.datos.map((sol) => (
-                <tr key={sol.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                    {new Date(sol.fecha_solicitud).toLocaleDateString('es-VE')}
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    {sol.insumo}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {sol.cantidad_solicitada.toLocaleString('es-VE')}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {sol.cantidad_despachada.toLocaleString('es-VE')}
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium">{sol.solicitante}</p>
-                    <p className="text-xs text-muted-foreground">{sol.solicitante_telefono}</p>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{sol.registrado_por}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${estadoBadge[sol.estado]}`}>
-                      {estadoLabel[sol.estado]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${entregaBadge[sol.estado_entrega]}`}>
-                        {entregaLabel[sol.estado_entrega]}
-                      </span>
-                      {sol.estado !== 'cancelada' && (
-                        <CambiarEstadoEntrega
-                          solicitudId={sol.id}
-                          estadoActual={sol.estado_entrega}
-                          observacionesActuales={sol.observaciones}
-                        />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <TablaSolicitudes filas={listado.datos} />
     </div>
   )
 }

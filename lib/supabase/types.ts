@@ -441,6 +441,7 @@ export type Database = {
           fecha_movimiento: string
           id: string
           insumo_id: string
+          lote_id: string | null
           observaciones: string | null
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id: string
@@ -457,6 +458,7 @@ export type Database = {
           fecha_movimiento?: string
           id?: string
           insumo_id: string
+          lote_id?: string | null
           observaciones?: string | null
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id: string
@@ -473,6 +475,7 @@ export type Database = {
           fecha_movimiento?: string
           id?: string
           insumo_id?: string
+          lote_id?: string | null
           observaciones?: string | null
           tipo?: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id?: string
@@ -652,6 +655,7 @@ export type Database = {
           fecha_solicitud: string
           id: string
           insumo_id: string
+          lote_id: string | null
           observaciones: string | null
           solicitante_id: string
           updated_at: string
@@ -667,6 +671,7 @@ export type Database = {
           fecha_solicitud?: string
           id?: string
           insumo_id: string
+          lote_id?: string | null
           observaciones?: string | null
           solicitante_id: string
           updated_at?: string
@@ -682,6 +687,7 @@ export type Database = {
           fecha_solicitud?: string
           id?: string
           insumo_id?: string
+          lote_id?: string | null
           observaciones?: string | null
           solicitante_id?: string
           updated_at?: string
@@ -1061,6 +1067,12 @@ export type Database = {
         Returns: Json
       }
       sp_desactivar_insumo: { Args: { p_insumo_id: string }; Returns: Json }
+      sp_detalle_lote_egresos: { Args: { p_lote_id: string }; Returns: Json }
+      sp_detalle_lote_ingresos: { Args: { p_lote_id: string }; Returns: Json }
+      sp_detalle_lote_solicitudes: {
+        Args: { p_lote_id: string }
+        Returns: Json
+      }
       sp_historial_movimientos: {
         Args: {
           p_centro_id: string
@@ -1191,6 +1203,17 @@ export type Database = {
           p_donante_id?: string
           p_fecha: string
           p_insumo_id: string
+          p_observaciones?: string
+        }
+        Returns: Json
+      }
+      sp_registrar_ingreso_multiple: {
+        Args: {
+          p_centro_id: string
+          p_donante_anonimo?: boolean
+          p_donante_id?: string
+          p_fecha: string
+          p_items?: Json
           p_observaciones?: string
         }
         Returns: Json
