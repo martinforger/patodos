@@ -90,7 +90,7 @@ export function FilaInsumoEgreso({
       <input
         className={inputCls}
         type="number"
-        step="1"
+        step="0.01"
         min="0.01"
         placeholder="Cantidad"
         value={item.cantidad}
