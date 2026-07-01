@@ -5,10 +5,13 @@ export const voluntarioSchema = z.object({
   apellidos: z.string().min(2, 'Mínimo 2 caracteres'),
   nacionalidad: z.enum(['V', 'E'] as const, { error: 'Selecciona V o E' }),
   cedula_numero: z.string().min(4, 'Cédula requerida').regex(/^\d+$/, 'Solo números'),
-  fecha_nacimiento: z.string().optional(),
   telefono: z.string().min(7, 'Teléfono requerido'),
   telefono_emergencia: z.string().optional(),
-  zona: z.string().optional(),
+  turno: z.enum(['completo', 'manana', 'tarde'] as const).optional(),
+  tiene_laptop: z.boolean(),
+  tiene_vehiculo: z.boolean(),
+  vinculo_ucab: z.enum(['estudiante', 'egresado', 'profesor_empleado', 'externo'] as const).optional(),
+  carrera: z.string().optional(),
 })
 
 export type VoluntarioData = z.infer<typeof voluntarioSchema>

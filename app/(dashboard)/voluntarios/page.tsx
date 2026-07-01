@@ -27,8 +27,12 @@ export type Voluntario = {
   nacionalidad: string
   cedula_numero: string
   telefono: string
-  zona: string | null
   activo: boolean
+  turno: string | null
+  tiene_laptop: boolean
+  tiene_vehiculo: boolean
+  vinculo_ucab: string | null
+  carrera: string | null
   asistencia_hoy: AsistenciaHoy
 }
 
