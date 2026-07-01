@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { formatFecha } from '@/lib/utils'
 
 type Entrega = {
   id: string
@@ -55,7 +56,7 @@ export function EntregasPersonaDialog({ personaId, nombre, centroId }: Props) {
                   <div>
                     <p className="font-medium">{e.insumo}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(e.fecha_movimiento).toLocaleDateString('es-VE')}
+                      {formatFecha(e.fecha_movimiento)}
                       {e.destino && ` · ${e.destino}`}
                       {e.grupo_familiar && ` · ${e.grupo_familiar}`}
                       {!e.afecta_inventario && ' · no afectó inventario'}

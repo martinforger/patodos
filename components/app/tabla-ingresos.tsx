@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DetalleIngresoDialog, type FilaIngreso } from '@/components/app/detalle-ingreso-dialog'
+import { formatFecha } from '@/lib/utils'
 
 type Props = { filas: FilaIngreso[] }
 
@@ -37,7 +38,7 @@ export function TablaIngresos({ filas }: Props) {
                   className={`hover:bg-muted/30 transition-colors cursor-pointer ${fila.anulado ? 'opacity-50' : ''}`}
                 >
                   <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                    {new Date(fila.fecha_movimiento).toLocaleDateString('es-VE')}
+                    {formatFecha(fila.fecha_movimiento)}
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {fila.es_lote ? (

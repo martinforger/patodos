@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { formatFecha } from '@/lib/utils'
 import { inputCls } from '@/components/app/form'
 import { IntegrantesEditor } from '@/components/app/integrantes-editor'
 import type { IntegranteData } from '@/lib/validations/familias'
@@ -245,7 +246,7 @@ export function DetalleFamiliaDialog({ familia, centroId }: Props) {
                       <div>
                         <p className="font-medium">{e.insumo}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(e.fecha_movimiento).toLocaleDateString('es-VE')} · recibió {e.recibido_por}
+                          {formatFecha(e.fecha_movimiento)} · recibió {e.recibido_por}
                           {!e.afecta_inventario && ' · no afectó inventario'}
                         </p>
                       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DetalleEgresoDialog, type FilaEgreso } from '@/components/app/detalle-egreso-dialog'
+import { formatFecha } from '@/lib/utils'
 
 type Props = { filas: FilaEgreso[]; rolUsuario: string }
 
@@ -38,7 +39,7 @@ export function TablaEgresos({ filas, rolUsuario }: Props) {
                   className={`hover:bg-muted/30 transition-colors cursor-pointer ${fila.anulado ? 'opacity-50' : ''}`}
                 >
                   <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                    {new Date(fila.fecha_movimiento).toLocaleDateString('es-VE')}
+                    {formatFecha(fila.fecha_movimiento)}
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {fila.es_lote ? (

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { formatFecha } from '@/lib/utils'
 
 type ItemLote = {
   id: string
@@ -117,7 +118,7 @@ export function DetalleEgresoDialog({ fila, rolUsuario, onClose }: Props) {
           <div className="space-y-4">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <dt className="text-muted-foreground">Fecha</dt>
-              <dd>{new Date(datos.fecha).toLocaleDateString('es-VE')}</dd>
+              <dd>{formatFecha(datos.fecha)}</dd>
               <dt className="text-muted-foreground">Destino</dt>
               <dd>{datos.destino}{datos.destino_municipio ? ` · ${datos.destino_municipio}` : ''}</dd>
               <dt className="text-muted-foreground">Recibe</dt>

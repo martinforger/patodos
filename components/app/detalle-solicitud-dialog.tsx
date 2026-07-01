@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { CambiarEstadoEntrega } from '@/components/app/cambiar-estado-entrega'
 import { CerrarLoteSolicitud } from '@/components/app/cerrar-lote-solicitud'
+import { formatFecha } from '@/lib/utils'
 
 type EstadoSolicitud = 'pendiente' | 'parcialmente_atendida' | 'completada' | 'cancelada'
 type EstadoEntrega = 'pendiente' | 'embalado' | 'enviado' | 'entregado'
@@ -140,7 +141,7 @@ export function DetalleSolicitudDialog({ fila, onClose }: Props) {
           <div className="space-y-4">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <dt className="text-muted-foreground">Fecha</dt>
-              <dd>{new Date(datos.fecha).toLocaleDateString('es-VE')}</dd>
+              <dd>{formatFecha(datos.fecha)}</dd>
               <dt className="text-muted-foreground">Solicitante</dt>
               <dd>
                 <p>{datos.solicitante}</p>

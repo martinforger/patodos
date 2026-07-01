@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -1084,16 +1084,12 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_anular_egreso: {
+        Args: { p_es_lote: boolean; p_id: string; p_motivo: string }
+        Returns: Json
+      }
       sp_anular_movimiento: {
         Args: { p_motivo: string; p_movimiento_id: string }
-        Returns: Json
-      },
-      sp_anular_egreso: {
-        Args: {
-          p_id: string
-          p_es_lote: boolean
-          p_motivo: string
-        }
         Returns: Json
       }
       sp_asignar_usuario_centro: {
@@ -1273,7 +1269,13 @@ export type Database = {
       sp_listar_centros_publicos: { Args: never; Returns: Json }
       sp_listar_destinos: { Args: { p_centro_id: string }; Returns: Json }
       sp_listar_egresos: {
-        Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
+        Args: {
+          p_centro_id: string
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
+          p_pagina?: number
+          p_por_pagina?: number
+        }
         Returns: Json
       }
       sp_listar_equipo: { Args: { p_centro_id: string }; Returns: Json }
@@ -1282,7 +1284,13 @@ export type Database = {
         Returns: Json
       }
       sp_listar_ingresos: {
-        Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
+        Args: {
+          p_centro_id: string
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
+          p_pagina?: number
+          p_por_pagina?: number
+        }
         Returns: Json
       }
       sp_listar_insumos: {
@@ -1294,6 +1302,8 @@ export type Database = {
         Args: {
           p_centro_id: string
           p_estado?: string
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
           p_pagina?: number
           p_por_pagina?: number
         }

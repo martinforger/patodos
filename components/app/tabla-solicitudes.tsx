@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CambiarEstadoEntrega } from '@/components/app/cambiar-estado-entrega'
 import { DetalleSolicitudDialog, type FilaSolicitud } from '@/components/app/detalle-solicitud-dialog'
+import { formatFecha } from '@/lib/utils'
 
 type EstadoSolicitud = 'pendiente' | 'parcialmente_atendida' | 'completada' | 'cancelada'
 type EstadoEntrega = 'pendiente' | 'embalado' | 'enviado' | 'entregado'
@@ -71,7 +72,7 @@ export function TablaSolicitudes({ filas }: Props) {
                   className="hover:bg-muted/30 transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                    {new Date(fila.fecha_solicitud).toLocaleDateString('es-VE')}
+                    {formatFecha(fila.fecha_solicitud)}
                   </td>
                   <td className="px-4 py-3 font-medium">
                     {fila.es_lote ? (
