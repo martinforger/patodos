@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -259,18 +259,21 @@ export type Database = {
       detalle_egreso: {
         Row: {
           destino_id: string
+          grupo_familiar_id: string | null
           id: string
           movimiento_id: string
           persona_contacto_id: string
         }
         Insert: {
           destino_id: string
+          grupo_familiar_id?: string | null
           id?: string
           movimiento_id: string
           persona_contacto_id: string
         }
         Update: {
           destino_id?: string
+          grupo_familiar_id?: string | null
           id?: string
           movimiento_id?: string
           persona_contacto_id?: string
@@ -281,6 +284,13 @@ export type Database = {
             columns: ["destino_id"]
             isOneToOne: false
             referencedRelation: "destino"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_egreso_grupo_familiar_id_fkey"
+            columns: ["grupo_familiar_id"]
+            isOneToOne: false
+            referencedRelation: "grupo_familiar"
             referencedColumns: ["id"]
           },
           {
@@ -335,6 +345,54 @@ export type Database = {
           },
         ]
       }
+      grupo_familiar: {
+        Row: {
+          activo: boolean
+          centro_id: string
+          created_at: string
+          id: string
+          nombre_familia: string
+          observaciones: string | null
+          representante_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          centro_id: string
+          created_at?: string
+          id?: string
+          nombre_familia: string
+          observaciones?: string | null
+          representante_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          centro_id?: string
+          created_at?: string
+          id?: string
+          nombre_familia?: string
+          observaciones?: string | null
+          representante_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_familiar_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupo_familiar_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "persona"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insumo: {
         Row: {
           activo: boolean
@@ -385,6 +443,47 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centro_acopio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrante_familia: {
+        Row: {
+          created_at: string
+          es_bebe: boolean
+          es_menor: boolean
+          fecha_nacimiento: string | null
+          grupo_id: string
+          id: string
+          nombre: string
+          parentesco: string | null
+        }
+        Insert: {
+          created_at?: string
+          es_bebe?: boolean
+          es_menor?: boolean
+          fecha_nacimiento?: string | null
+          grupo_id: string
+          id?: string
+          nombre: string
+          parentesco?: string | null
+        }
+        Update: {
+          created_at?: string
+          es_bebe?: boolean
+          es_menor?: boolean
+          fecha_nacimiento?: string | null
+          grupo_id?: string
+          id?: string
+          nombre?: string
+          parentesco?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrante_familia_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupo_familiar"
             referencedColumns: ["id"]
           },
         ]
@@ -653,6 +752,7 @@ export type Database = {
           estado: Database["public"]["Enums"]["estado_solicitud"]
           estado_entrega: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud: string
+          grupo_familiar_id: string | null
           id: string
           insumo_id: string
           lote_id: string | null
@@ -669,6 +769,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_solicitud"]
           estado_entrega?: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud?: string
+          grupo_familiar_id?: string | null
           id?: string
           insumo_id: string
           lote_id?: string | null
@@ -685,6 +786,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_solicitud"]
           estado_entrega?: Database["public"]["Enums"]["estado_entrega"]
           fecha_solicitud?: string
+          grupo_familiar_id?: string | null
           id?: string
           insumo_id?: string
           lote_id?: string | null
@@ -706,6 +808,13 @@ export type Database = {
             columns: ["destino_id"]
             isOneToOne: false
             referencedRelation: "destino"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitud_grupo_familiar_id_fkey"
+            columns: ["grupo_familiar_id"]
+            isOneToOne: false
+            referencedRelation: "grupo_familiar"
             referencedColumns: ["id"]
           },
           {
@@ -978,6 +1087,14 @@ export type Database = {
       sp_anular_movimiento: {
         Args: { p_motivo: string; p_movimiento_id: string }
         Returns: Json
+      },
+      sp_anular_egreso: {
+        Args: {
+          p_id: string
+          p_es_lote: boolean
+          p_motivo: string
+        }
+        Returns: Json
       }
       sp_asignar_usuario_centro: {
         Args: {
@@ -1000,6 +1117,10 @@ export type Database = {
         Args: { p_centro_id: string; p_termino: string }
         Returns: Json
       }
+      sp_buscar_grupo_familiar: {
+        Args: { p_centro_id: string; p_termino: string }
+        Returns: Json
+      }
       sp_buscar_insumo: {
         Args: {
           p_categoria_id?: string
@@ -1008,56 +1129,8 @@ export type Database = {
         }
         Returns: Json
       }
-      sp_buscar_grupo_familiar: {
-        Args: { p_centro_id: string; p_termino: string }
-        Returns: Json
-      }
       sp_buscar_persona: {
         Args: { p_centro_id: string; p_termino: string }
-        Returns: Json
-      }
-      sp_crear_grupo_familiar: {
-        Args: {
-          p_centro_id: string
-          p_integrantes?: Json
-          p_nombre_familia: string
-          p_observaciones?: string
-          p_representante_id: string
-        }
-        Returns: Json
-      }
-      sp_detalle_grupo_familiar: {
-        Args: { p_grupo_id: string }
-        Returns: Json
-      }
-      sp_editar_grupo_familiar: {
-        Args: {
-          p_grupo_id: string
-          p_integrantes?: Json
-          p_nombre_familia: string
-          p_observaciones?: string
-        }
-        Returns: Json
-      }
-      sp_entregas_recientes: {
-        Args: {
-          p_centro_id: string
-          p_grupo_familiar_id: string
-          p_insumo_ids: string[]
-          p_persona_id: string
-        }
-        Returns: Json
-      }
-      sp_historial_entregas_familia: {
-        Args: { p_centro_id: string; p_grupo_familiar_id: string }
-        Returns: Json
-      }
-      sp_historial_entregas_persona: {
-        Args: { p_centro_id: string; p_persona_id: string }
-        Returns: Json
-      }
-      sp_listar_grupos_familiares: {
-        Args: { p_centro_id: string }
         Returns: Json
       }
       sp_cambiar_visibilidad_centro: {
@@ -1101,6 +1174,16 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_crear_grupo_familiar: {
+        Args: {
+          p_centro_id: string
+          p_integrantes?: Json
+          p_nombre_familia: string
+          p_observaciones?: string
+          p_representante_id: string
+        }
+        Returns: Json
+      }
       sp_crear_insumo: {
         Args: {
           p_categoria_id: string
@@ -1128,10 +1211,37 @@ export type Database = {
         Returns: Json
       }
       sp_desactivar_insumo: { Args: { p_insumo_id: string }; Returns: Json }
+      sp_detalle_grupo_familiar: { Args: { p_grupo_id: string }; Returns: Json }
       sp_detalle_lote_egresos: { Args: { p_lote_id: string }; Returns: Json }
       sp_detalle_lote_ingresos: { Args: { p_lote_id: string }; Returns: Json }
       sp_detalle_lote_solicitudes: {
         Args: { p_lote_id: string }
+        Returns: Json
+      }
+      sp_editar_grupo_familiar: {
+        Args: {
+          p_grupo_id: string
+          p_integrantes?: Json
+          p_nombre_familia: string
+          p_observaciones?: string
+        }
+        Returns: Json
+      }
+      sp_entregas_recientes: {
+        Args: {
+          p_centro_id: string
+          p_grupo_familiar_id: string
+          p_insumo_ids: string[]
+          p_persona_id: string
+        }
+        Returns: Json
+      }
+      sp_historial_entregas_familia: {
+        Args: { p_centro_id: string; p_grupo_familiar_id: string }
+        Returns: Json
+      }
+      sp_historial_entregas_persona: {
+        Args: { p_centro_id: string; p_persona_id: string }
         Returns: Json
       }
       sp_historial_movimientos: {
@@ -1167,6 +1277,10 @@ export type Database = {
         Returns: Json
       }
       sp_listar_equipo: { Args: { p_centro_id: string }; Returns: Json }
+      sp_listar_grupos_familiares: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
       sp_listar_ingresos: {
         Args: { p_centro_id: string; p_pagina?: number; p_por_pagina?: number }
         Returns: Json

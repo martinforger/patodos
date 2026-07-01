@@ -61,7 +61,7 @@ export default async function EgresosPage() {
         />
       </div>
 
-      <TablaEgresos filas={listado.datos} />
+      <TablaEgresos filas={listado.datos} rolUsuario={perfil.rol} />
     </div>
   )
 }
