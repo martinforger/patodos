@@ -999,8 +999,56 @@ export type Database = {
         }
         Returns: Json
       }
+      sp_buscar_grupo_familiar: {
+        Args: { p_centro_id: string; p_termino: string }
+        Returns: Json
+      }
       sp_buscar_persona: {
         Args: { p_centro_id: string; p_termino: string }
+        Returns: Json
+      }
+      sp_crear_grupo_familiar: {
+        Args: {
+          p_centro_id: string
+          p_integrantes?: Json
+          p_nombre_familia: string
+          p_observaciones?: string
+          p_representante_id: string
+        }
+        Returns: Json
+      }
+      sp_detalle_grupo_familiar: {
+        Args: { p_grupo_id: string }
+        Returns: Json
+      }
+      sp_editar_grupo_familiar: {
+        Args: {
+          p_grupo_id: string
+          p_integrantes?: Json
+          p_nombre_familia: string
+          p_observaciones?: string
+        }
+        Returns: Json
+      }
+      sp_entregas_recientes: {
+        Args: {
+          p_centro_id: string
+          p_grupo_familiar_id: string
+          p_insumo_ids: string[]
+          p_persona_id: string
+        }
+        Returns: Json
+      }
+      sp_historial_entregas_familia: {
+        Args: { p_centro_id: string; p_grupo_familiar_id: string }
+        Returns: Json
+      }
+      sp_historial_entregas_persona: {
+        Args: { p_centro_id: string; p_persona_id: string }
+        Returns: Json
+      }
+      sp_listar_grupos_familiares: {
+        Args: { p_centro_id: string }
         Returns: Json
       }
       sp_cambiar_visibilidad_centro: {
@@ -1192,6 +1240,7 @@ export type Database = {
           p_centro_id: string
           p_destino_id: string
           p_fecha: string
+          p_grupo_familiar_id?: string
           p_items?: Json
           p_observaciones?: string
           p_persona_contacto_id?: string
@@ -1238,6 +1287,7 @@ export type Database = {
           p_centro_id: string
           p_destino_id?: string
           p_fecha?: string
+          p_grupo_familiar_id?: string
           p_items?: Json
           p_observaciones?: string
           p_solicitante_id: string

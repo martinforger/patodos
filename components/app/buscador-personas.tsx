@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { EntregasPersonaDialog } from '@/components/app/entregas-persona-dialog'
 
 type Persona = {
   id: string
@@ -60,12 +61,13 @@ export function BuscadorPersonas({ centroId }: { centroId: string }) {
                 <th className="px-4 py-3 text-left font-medium">Cédula</th>
                 <th className="px-4 py-3 text-left font-medium">Correo</th>
                 <th className="px-4 py-3 text-left font-medium">Observaciones</th>
+                <th className="px-4 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {resultados.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     No se encontraron personas con «{query}».
                   </td>
                 </tr>
@@ -80,6 +82,13 @@ export function BuscadorPersonas({ centroId }: { centroId: string }) {
                     <td className="px-4 py-3 text-muted-foreground">{p.correo ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs max-w-xs truncate">
                       {p.observaciones ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <EntregasPersonaDialog
+                        personaId={p.id}
+                        nombre={`${p.nombre} ${p.apellido}`}
+                        centroId={centroId}
+                      />
                     </td>
                   </tr>
                 ))
