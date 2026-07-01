@@ -22,12 +22,14 @@ import {
   Menu,
   HeartHandshake,
   Bug,
+  Tags,
 } from 'lucide-react'
 import { FormularioBug } from '@/components/app/formulario-bug'
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/inventario', label: 'Inventario', icon: Package },
+  { href: '/insumos', label: 'Catálogo', icon: Tags },
   { href: '/ingresos', label: 'Ingresos', icon: ArrowDownToLine },
   { href: '/egresos', label: 'Egresos', icon: ArrowUpFromLine },
   { href: '/solicitudes', label: 'Solicitudes', icon: ClipboardList },
