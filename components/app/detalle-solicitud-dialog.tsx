@@ -7,6 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { CambiarEstadoEntrega } from '@/components/app/cambiar-estado-entrega'
+import { CerrarLoteSolicitud } from '@/components/app/cerrar-lote-solicitud'
 
 type EstadoSolicitud = 'pendiente' | 'parcialmente_atendida' | 'completada' | 'cancelada'
 type EstadoEntrega = 'pendiente' | 'embalado' | 'enviado' | 'entregado'
@@ -125,7 +126,12 @@ export function DetalleSolicitudDialog({ fila, onClose }: Props) {
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Detalle de solicitud</DialogTitle>
+          <div className="flex items-center justify-between gap-4 pr-6">
+            <DialogTitle>Detalle de solicitud</DialogTitle>
+            {fila.es_lote && fila.lote_id && datos.items.some((i) => i.estado !== 'completada' && i.estado !== 'cancelada') && (
+              <CerrarLoteSolicitud loteId={fila.lote_id} onSuccess={onItemUpdated} />
+            )}
+          </div>
         </DialogHeader>
 
         {cargando ? (

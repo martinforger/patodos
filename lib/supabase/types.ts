@@ -1012,6 +1012,10 @@ export type Database = {
         Returns: Json
       }
       sp_centro_nombre_publico: { Args: { p_centro_id: string }; Returns: Json }
+      sp_cerrar_lote_solicitud: {
+        Args: { p_lote_id: string; p_motivo?: string }
+        Returns: Json
+      }
       sp_crear_categoria_destino: {
         Args: { p_centro_id: string; p_nombre: string }
         Returns: Json
