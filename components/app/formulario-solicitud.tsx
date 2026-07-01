@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dialog'
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { BuscadorPersonaInline } from '@/components/app/buscador-persona-inline'
+import { BuscadorFamiliaInline, type Familia } from '@/components/app/buscador-familia-inline'
+import { AvisoEntregasRecientes } from '@/components/app/aviso-entregas-recientes'
 import { BuscadorDestinoInline, type Destino } from '@/components/app/buscador-destino-inline'
 import { FilaInsumoSolicitud, type ItemSolicitud } from '@/components/app/fila-insumo-solicitud'
 
@@ -30,6 +32,7 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [solicitanteSeleccionado, setSolicitanteSeleccionado] = useState<Persona | null>(null)
+  const [familiaSeleccionada, setFamiliaSeleccionada] = useState<Familia | null>(null)
 
   const [items, setItems] = useState<ItemSolicitud[]>([{ insumo_id: '', cantidad: '' }])
   const [sinDestino, setSinDestino] = useState(true)
@@ -38,7 +41,7 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
   const router = useRouter()
 
   const {
-    register, handleSubmit, reset, watch,
+    register, handleSubmit, reset, watch, setValue,
     formState: { errors, isSubmitting },
   } = useForm<SolicitudData>({
     resolver: zodResolver(solicitudSchema),
@@ -52,6 +55,19 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
   } = useForm<PersonaData>({ resolver: zodResolver(personaSchema) })
 
   const solicitanteModo = watch('solicitante_modo')
+
+  function seleccionarFamilia(f: Familia) {
+    setFamiliaSeleccionada(f)
+    // El representante de la familia pasa a ser el solicitante.
+    setValue('solicitante_modo', 'existente')
+    setSolicitanteSeleccionado({
+      id: f.representante_id,
+      nombre: f.representante_nombre,
+      apellido: f.representante_apellido,
+      telefono: f.representante_telefono ?? '',
+      cedula: f.representante_cedula,
+    })
+  }
 
   function actualizarItem(index: number, patch: Partial<ItemSolicitud>) {
     setItems(prev => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)))
@@ -109,6 +125,7 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
       p_destino_id: sinDestino ? undefined : (destinoSeleccionado?.id ?? undefined),
       p_observaciones: data.observaciones || undefined,
       p_items: itemsValidos.map(it => ({ insumo_id: it.insumo_id, cantidad: Number(it.cantidad) })),
+      p_grupo_familiar_id: familiaSeleccionada?.id ?? undefined,
     })
 
     if (rpcError) { setError(traducirError(rpcError.message)); return }
@@ -124,6 +141,7 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
     reset()
     resetSol()
     setSolicitanteSeleccionado(null)
+    setFamiliaSeleccionada(null)
     setItems([{ insumo_id: '', cantidad: '' }])
     setSinDestino(true)
     setDestinoSeleccionado(null)
@@ -203,6 +221,27 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
               )}
             </div>
 
+            {/* Grupo familiar (opcional) */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                Grupo familiar{' '}
+                <span className="font-normal text-muted-foreground">(opcional)</span>
+              </p>
+              <div className="rounded-md bg-muted/40 p-3">
+                <BuscadorFamiliaInline
+                  centroId={centroId}
+                  seleccionada={familiaSeleccionada}
+                  onSelect={seleccionarFamilia}
+                  onCambiar={() => setFamiliaSeleccionada(null)}
+                />
+                {familiaSeleccionada && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    El representante quedó como solicitante.
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Solicitante */}
             <div className="space-y-2">
               <p className="text-sm font-medium">Solicitante *</p>
@@ -256,6 +295,14 @@ export function FormularioSolicitud({ centroId, categorias }: Props) {
                 </div>
               </div>
             )}
+
+            {/* Aviso de entregas recientes (no bloqueante) */}
+            <AvisoEntregasRecientes
+              centroId={centroId}
+              personaId={solicitanteSeleccionado?.id ?? null}
+              grupoFamiliarId={familiaSeleccionada?.id ?? null}
+              insumoIds={items.filter(it => it.insumo_id).map(it => it.insumo_id)}
+            />
 
             <Field label="Observaciones (opcional)" error={errors.observaciones?.message}>
               <textarea className={inputCls} rows={2} {...register('observaciones')} />
