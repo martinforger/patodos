@@ -27,7 +27,7 @@ export function TablaVoluntarios({ voluntarios }: Props) {
           <tr>
             <th className="px-4 py-3 text-left font-medium">Voluntario</th>
             <th className="px-4 py-3 text-left font-medium">Cédula</th>
-            <th className="px-4 py-3 text-left font-medium">Zona</th>
+            <th className="px-4 py-3 text-left font-medium">Vínculo</th>
             <th className="px-4 py-3 text-center font-medium">Asistencia hoy</th>
             <th className="px-4 py-3 text-center font-medium">Comida 1</th>
             <th className="px-4 py-3 text-center font-medium">Comida 2</th>
@@ -86,7 +86,7 @@ function FilaVoluntario({ voluntario: v }: { voluntario: Voluntario }) {
         {v.nacionalidad}-{v.cedula_numero}
       </td>
       <td className="px-4 py-3 text-muted-foreground">
-        {v.zona ?? '—'}
+        {v.vinculo_ucab ?? '—'}
       </td>
       <td className="px-4 py-3 text-center">
         {asistencia ? (

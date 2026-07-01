@@ -21,7 +21,10 @@ export function FormularioVoluntario({ centroId }: Props) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<VoluntarioData>({ resolver: zodResolver(voluntarioSchema) })
+  } = useForm<VoluntarioData>({
+    resolver: zodResolver(voluntarioSchema),
+    defaultValues: { tiene_laptop: false, tiene_vehiculo: false },
+  })
 
   async function onSubmit(data: VoluntarioData) {
     setError(null)
@@ -81,10 +84,6 @@ export function FormularioVoluntario({ centroId }: Props) {
             </div>
           </div>
 
-          <Field label="Fecha de nacimiento" error={errors.fecha_nacimiento?.message}>
-            <input className={inputCls} type="date" {...register('fecha_nacimiento')} />
-          </Field>
-
           <div className="grid grid-cols-2 gap-3">
             <Field label="Teléfono" error={errors.telefono?.message}>
               <input className={inputCls} placeholder="0414-1234567" {...register('telefono')} />
@@ -94,9 +93,40 @@ export function FormularioVoluntario({ centroId }: Props) {
             </Field>
           </div>
 
-          <Field label="Zona (opcional)" error={errors.zona?.message}>
-            <input className={inputCls} placeholder="Ej. Barrio El Carmen" {...register('zona')} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Turno (opcional)" error={errors.turno?.message}>
+              <select className={inputCls} {...register('turno')}>
+                <option value="">—</option>
+                <option value="completo">Completo</option>
+                <option value="manana">Mañana</option>
+                <option value="tarde">Tarde</option>
+              </select>
+            </Field>
+            <Field label="Vínculo UCAB (opcional)" error={errors.vinculo_ucab?.message}>
+              <select className={inputCls} {...register('vinculo_ucab')}>
+                <option value="">—</option>
+                <option value="estudiante">Estudiante</option>
+                <option value="egresado">Egresado</option>
+                <option value="profesor_empleado">Profesor/empleado</option>
+                <option value="externo">Externo</option>
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Carrera (opcional)" error={errors.carrera?.message}>
+            <input className={inputCls} placeholder="Ej. Ing Informática" {...register('carrera')} />
           </Field>
+
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4 rounded border-border accent-primary" {...register('tiene_laptop')} />
+              Tiene laptop
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4 rounded border-border accent-primary" {...register('tiene_vehiculo')} />
+              Tiene vehículo
+            </label>
+          </div>
 
           {error && (
             <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

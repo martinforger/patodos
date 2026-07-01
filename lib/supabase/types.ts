@@ -894,47 +894,56 @@ export type Database = {
         Row: {
           activo: boolean
           apellidos: string
+          carrera: string | null
           cedula_numero: string
           centro_id: string
           created_at: string
-          fecha_nacimiento: string | null
           id: string
           nacionalidad: string
           nombres: string
           telefono: string | null
           telefono_emergencia: string | null
+          tiene_laptop: boolean
+          tiene_vehiculo: boolean
+          turno: string | null
           updated_at: string
-          zona: string | null
+          vinculo_ucab: string | null
         }
         Insert: {
           activo?: boolean
           apellidos: string
+          carrera?: string | null
           cedula_numero: string
           centro_id: string
           created_at?: string
-          fecha_nacimiento?: string | null
           id?: string
           nacionalidad: string
           nombres: string
           telefono?: string | null
           telefono_emergencia?: string | null
+          tiene_laptop?: boolean
+          tiene_vehiculo?: boolean
+          turno?: string | null
           updated_at?: string
-          zona?: string | null
+          vinculo_ucab?: string | null
         }
         Update: {
           activo?: boolean
           apellidos?: string
+          carrera?: string | null
           cedula_numero?: string
           centro_id?: string
           created_at?: string
-          fecha_nacimiento?: string | null
           id?: string
           nacionalidad?: string
           nombres?: string
           telefono?: string | null
           telefono_emergencia?: string | null
+          tiene_laptop?: boolean
+          tiene_vehiculo?: boolean
+          turno?: string | null
           updated_at?: string
-          zona?: string | null
+          vinculo_ucab?: string | null
         }
         Relationships: [
           {
@@ -1297,14 +1306,17 @@ export type Database = {
       sp_registrar_voluntario: {
         Args: {
           p_apellidos: string
+          p_carrera?: string
           p_cedula_numero: string
           p_centro_id: string
-          p_fecha_nacimiento?: string
           p_nacionalidad: string
           p_nombres: string
           p_telefono?: string
           p_telefono_emergencia?: string
-          p_zona?: string
+          p_tiene_laptop?: boolean
+          p_tiene_vehiculo?: boolean
+          p_turno?: string
+          p_vinculo_ucab?: string
         }
         Returns: Json
       }
