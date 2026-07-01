@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
@@ -43,11 +44,42 @@ export type FilaEgreso = {
   observaciones: string | null
 }
 
-type Props = { fila: FilaEgreso; onClose: () => void }
+type Props = { fila: FilaEgreso; rolUsuario?: string; onClose: () => void }
 
-export function DetalleEgresoDialog({ fila, onClose }: Props) {
+export function DetalleEgresoDialog({ fila, rolUsuario, onClose }: Props) {
   const [detalle, setDetalle] = useState<LoteDetalle | null>(null)
   const [cargando, setCargando] = useState(false)
+  const [mostrandoConfirmarAnular, setMostrandoConfirmarAnular] = useState(false)
+  const [motivo, setMotivo] = useState('')
+  const [cargandoAnulacion, setCargandoAnulacion] = useState(false)
+  const [errorAnulacion, setErrorAnulacion] = useState<string | null>(null)
+  const router = useRouter()
+
+  const puedeAnular = rolUsuario === 'coordinador_centro' || rolUsuario === 'administrador_sistema'
+
+  async function handleAnular() {
+    if (!motivo.trim()) {
+      setErrorAnulacion('Debes indicar el motivo de la anulación.')
+      return
+    }
+    setCargandoAnulacion(true)
+    setErrorAnulacion(null)
+    const supabase = createClient()
+    const { error: spError } = await supabase.rpc('sp_anular_egreso', {
+      p_id: fila.id,
+      p_es_lote: fila.es_lote,
+      p_motivo: motivo.trim()
+    })
+    setCargandoAnulacion(false)
+    if (spError) {
+      setErrorAnulacion(spError.message)
+      return
+    }
+    setMostrandoConfirmarAnular(false)
+    setMotivo('')
+    onClose()
+    router.refresh()
+  }
 
   useEffect(() => {
     if (!fila.es_lote) return
@@ -144,6 +176,62 @@ export function DetalleEgresoDialog({ fila, onClose }: Props) {
                 </tbody>
               </table>
             </div>
+
+            {/* Sección de anulación / botones */}
+            {mostrandoConfirmarAnular ? (
+              <div className="border-t pt-4 mt-4 space-y-3">
+                <h3 className="text-sm font-semibold text-destructive">Anular este egreso</h3>
+                <p className="text-xs text-muted-foreground">
+                  Esta acción es irreversible y revertirá el stock en el inventario de este centro. Por favor, indica el motivo de la anulación:
+                </p>
+                <textarea
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  rows={3}
+                  placeholder="Motivo de la anulación (obligatorio)..."
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                  disabled={cargandoAnulacion}
+                />
+                {errorAnulacion && <p className="text-xs text-destructive">{errorAnulacion}</p>}
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setMostrandoConfirmarAnular(false)
+                      setMotivo('')
+                      setErrorAnulacion(null)
+                    }}
+                    className="rounded-md border px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+                    disabled={cargandoAnulacion}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleAnular}
+                    disabled={cargandoAnulacion}
+                    className="rounded-md bg-destructive text-destructive-foreground px-3 py-1.5 text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {cargandoAnulacion ? 'Anulando...' : 'Confirmar anulación'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center border-t pt-4 mt-4">
+                {puedeAnular && !fila.anulado && (
+                  <button
+                    onClick={() => setMostrandoConfirmarAnular(true)}
+                    className="rounded-md border border-destructive text-destructive px-3 py-1.5 text-xs font-medium hover:bg-destructive/10 transition-colors"
+                  >
+                    Anular egreso
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="rounded-md bg-muted px-4 py-1.5 text-xs font-medium hover:bg-muted/80 transition-colors ml-auto"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

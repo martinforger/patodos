@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { DetalleEgresoDialog, type FilaEgreso } from '@/components/app/detalle-egreso-dialog'
 
-type Props = { filas: FilaEgreso[] }
+type Props = { filas: FilaEgreso[]; rolUsuario: string }
 
-export function TablaEgresos({ filas }: Props) {
+export function TablaEgresos({ filas, rolUsuario }: Props) {
   const [filaSeleccionada, setFilaSeleccionada] = useState<FilaEgreso | null>(null)
 
   return (
@@ -80,6 +80,7 @@ export function TablaEgresos({ filas }: Props) {
       {filaSeleccionada && (
         <DetalleEgresoDialog
           fila={filaSeleccionada}
+          rolUsuario={rolUsuario}
           onClose={() => setFilaSeleccionada(null)}
         />
       )}
