@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { formatFecha } from '@/lib/utils'
 
 type ItemLote = {
   id: string
@@ -77,7 +78,7 @@ export function DetalleIngresoDialog({ fila, onClose }: Props) {
           <div className="space-y-4">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <dt className="text-muted-foreground">Fecha</dt>
-              <dd>{new Date(datos.fecha).toLocaleDateString('es-VE')}</dd>
+              <dd>{formatFecha(datos.fecha)}</dd>
               <dt className="text-muted-foreground">Donante</dt>
               <dd>{datos.donante}</dd>
               <dt className="text-muted-foreground">Registrado por</dt>

@@ -3,6 +3,7 @@ import { getPerfil } from '@/lib/supabase/perfil'
 import { SelectorCentroHeader } from '@/components/app/selector-centro-header'
 import { createClient } from '@/lib/supabase/server'
 import { BotonAnular } from '@/components/app/boton-anular'
+import { formatFecha } from '@/lib/utils'
 
 type Movimiento = {
   id: string
@@ -145,7 +146,7 @@ export default async function HistorialPage({
                   className={`hover:bg-muted/30 transition-colors ${mov.anulado ? 'opacity-50' : ''}`}
                 >
                   <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                    {new Date(mov.fecha_movimiento).toLocaleDateString('es-VE')}
+                    {formatFecha(mov.fecha_movimiento)}
                   </td>
                   <td className="px-4 py-3">
                     <span
