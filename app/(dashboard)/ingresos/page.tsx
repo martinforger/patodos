@@ -41,7 +41,7 @@ export default async function IngresosPage({
 
   const listado = (listadoRaw as ListadoIngresos) ?? { total: 0, pagina: 1, datos: [] }
 
-  const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos')
+  const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos', { p_centro_id: perfil.centro_id })
 
   return (
     <div>

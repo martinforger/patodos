@@ -20,12 +20,14 @@ import {
   LayoutGrid,
   HeartHandshake,
   Bug,
+  Tags,
 } from 'lucide-react'
 import { FormularioBug } from '@/components/app/formulario-bug'
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard, id: 'tour-panel' },
   { href: '/inventario', label: 'Inventario', icon: Package, id: 'tour-inventario' },
+  { href: '/insumos', label: 'Catálogo', icon: Tags, id: 'tour-insumos' },
   { href: '/ingresos', label: 'Ingresos', icon: ArrowDownToLine, id: 'tour-ingresos' },
   { href: '/egresos', label: 'Egresos', icon: ArrowUpFromLine, id: 'tour-egresos' },
   { href: '/solicitudes', label: 'Solicitudes', icon: ClipboardList, id: 'tour-solicitudes' },

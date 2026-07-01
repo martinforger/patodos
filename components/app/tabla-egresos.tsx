@@ -1,12 +1,25 @@
-'use client'
-
 import { useState } from 'react'
 import { DetalleEgresoDialog, type FilaEgreso } from '@/components/app/detalle-egreso-dialog'
 import { formatFecha } from '@/lib/utils'
+import { type Insumo } from '@/components/app/buscador-insumo-inline'
 
-type Props = { filas: FilaEgreso[]; rolUsuario: string }
+type Props = {
+  filas: FilaEgreso[]
+  rolUsuario: string
+  centroId: string
+  categorias: { id: string; nombre: string }[]
+  insumos: Insumo[]
+  inventario: { insumo_id: string; insumo: string; stock: number }[]
+}
 
-export function TablaEgresos({ filas, rolUsuario }: Props) {
+export function TablaEgresos({
+  filas,
+  rolUsuario,
+  centroId,
+  categorias,
+  insumos,
+  inventario,
+}: Props) {
   const [filaSeleccionada, setFilaSeleccionada] = useState<FilaEgreso | null>(null)
 
   return (
@@ -82,6 +95,10 @@ export function TablaEgresos({ filas, rolUsuario }: Props) {
         <DetalleEgresoDialog
           fila={filaSeleccionada}
           rolUsuario={rolUsuario}
+          centroId={centroId}
+          categorias={categorias}
+          insumos={insumos}
+          inventario={inventario}
           onClose={() => setFilaSeleccionada(null)}
         />
       )}

@@ -42,7 +42,7 @@ export default async function EgresosPage({
 
   const listado = (listadoRaw as ListadoEgresos) ?? { total: 0, pagina: 1, datos: [] }
 
-  const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos')
+  const { data: categorias } = await supabase.rpc('sp_listar_categorias_insumos', { p_centro_id: perfil.centro_id })
   const { data: insumos } = await supabase.rpc('sp_listar_insumos', { p_centro_id: perfil.centro_id })
   const { data: categoriasDestino } = await supabase.rpc('sp_listar_categorias_destino', { p_centro_id: perfil.centro_id })
   const { data: solicitudesPendientes } = await supabase.rpc('sp_listar_solicitudes_pendientes', {
@@ -78,7 +78,14 @@ export default async function EgresosPage({
 
       <FiltrosEgresos defaultDesde={params.desde} defaultHasta={params.hasta} />
 
-      <TablaEgresos filas={listado.datos} rolUsuario={perfil.rol} />
+      <TablaEgresos
+        filas={listado.datos}
+        rolUsuario={perfil.rol}
+        centroId={perfil.centro_id}
+        categorias={(categorias as { id: string; nombre: string }[]) ?? []}
+        insumos={(insumos as { id: string; font_size?: string; nombre: string; categoria: string }[]) ?? []}
+        inventario={(inventarioRaw as { insumo_id: string; insumo: string; stock: number }[]) ?? []}
+      />
 
       {/* Paginación simple */}
       {listado.total > 50 && (

@@ -7,6 +7,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { formatFecha } from '@/lib/utils'
+import { FormularioModificarEgreso } from './formulario-modificar-egreso'
+import { type Insumo } from '@/components/app/buscador-insumo-inline'
 
 type ItemLote = {
   id: string
@@ -45,12 +47,29 @@ export type FilaEgreso = {
   observaciones: string | null
 }
 
-type Props = { fila: FilaEgreso; rolUsuario?: string; onClose: () => void }
+type Props = {
+  fila: FilaEgreso
+  rolUsuario?: string
+  centroId?: string
+  categorias?: { id: string; nombre: string }[]
+  insumos?: Insumo[]
+  inventario?: { insumo_id: string; insumo: string; stock: number }[]
+  onClose: () => void
+}
 
-export function DetalleEgresoDialog({ fila, rolUsuario, onClose }: Props) {
+export function DetalleEgresoDialog({
+  fila,
+  rolUsuario,
+  centroId,
+  categorias,
+  insumos,
+  inventario,
+  onClose,
+}: Props) {
   const [detalle, setDetalle] = useState<LoteDetalle | null>(null)
   const [cargando, setCargando] = useState(false)
   const [mostrandoConfirmarAnular, setMostrandoConfirmarAnular] = useState(false)
+  const [editando, setEditando] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [cargandoAnulacion, setCargandoAnulacion] = useState(false)
   const [errorAnulacion, setErrorAnulacion] = useState<string | null>(null)
@@ -109,10 +128,23 @@ export function DetalleEgresoDialog({ fila, rolUsuario, onClose }: Props) {
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Detalle del egreso</DialogTitle>
+          <DialogTitle>{editando ? 'Modificar egreso' : 'Detalle del egreso'}</DialogTitle>
         </DialogHeader>
 
-        {cargando ? (
+        {editando ? (
+          <FormularioModificarEgreso
+            originalId={fila.id}
+            esLote={fila.es_lote}
+            centroId={centroId!}
+            categorias={categorias!}
+            insumos={insumos!}
+            inventario={inventario!}
+            onClose={() => {
+              setEditando(false)
+              onClose()
+            }}
+          />
+        ) : cargando ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Cargando…</p>
         ) : (
           <div className="space-y-4">
@@ -217,14 +249,24 @@ export function DetalleEgresoDialog({ fila, rolUsuario, onClose }: Props) {
               </div>
             ) : (
               <div className="flex justify-between items-center border-t pt-4 mt-4">
-                {puedeAnular && !fila.anulado && (
-                  <button
-                    onClick={() => setMostrandoConfirmarAnular(true)}
-                    className="rounded-md border border-destructive text-destructive px-3 py-1.5 text-xs font-medium hover:bg-destructive/10 transition-colors"
-                  >
-                    Anular egreso
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {puedeAnular && !fila.anulado && (
+                    <>
+                      <button
+                        onClick={() => setMostrandoConfirmarAnular(true)}
+                        className="rounded-md border border-destructive text-destructive px-3 py-1.5 text-xs font-medium hover:bg-destructive/10 transition-colors"
+                      >
+                        Anular egreso
+                      </button>
+                      <button
+                        onClick={() => setEditando(true)}
+                        className="rounded-md border border-primary text-primary px-3 py-1.5 text-xs font-medium hover:bg-primary/10 transition-colors"
+                      >
+                        Editar egreso
+                      </button>
+                    </>
+                  )}
+                </div>
                 <button
                   onClick={onClose}
                   className="rounded-md bg-muted px-4 py-1.5 text-xs font-medium hover:bg-muted/80 transition-colors ml-auto"
