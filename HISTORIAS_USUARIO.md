@@ -300,6 +300,38 @@ Generación de reportes consolidados para coordinación, transparencia y rendici
 
 ---
 
+### HU-15 · Registrar grupos familiares
+
+**Como** `operador_inventario` o `coordinador_centro`
+**quiero** agrupar personas en una familia con un representante e integrantes (con marca de menor/bebé)
+**para** que solo el representante retire la ayuda de todo el grupo y poder cerciorarme de que lo solicitado corresponde a la composición de la familia (ej. fórmula solo si hay bebé).
+
+**Criterios de aceptación**
+
+1. Se registra una familia con nombre, un representante (persona) y N integrantes ligeros (nombre, parentesco, fecha de nacimiento, menor/bebé).
+2. El listado muestra representante y composición (adultos / menores / bebés).
+3. Al registrar una solicitud o egreso se puede asociar una familia; su representante queda como solicitante / persona de contacto.
+4. Se puede editar la familia (incluida su composición) posteriormente.
+
+**Prioridad:** Alta · **SP:** `sp_crear_grupo_familiar`, `sp_editar_grupo_familiar`, `sp_listar_grupos_familiares`, `sp_detalle_grupo_familiar`, `sp_buscar_grupo_familiar`
+
+---
+
+### HU-16 · Control de entregas por persona / familia
+
+**Como** `operador_inventario` o `coordinador_centro`
+**quiero** ver si una persona o familia ya recibió el mismo insumo hoy o en los últimos 7 días
+**para** evitar entregas repetidas usadas para reventa y administrar mejor la ayuda.
+
+**Criterios de aceptación**
+
+1. Al registrar un egreso o solicitud, si el contacto/familia ya recibió alguno de los insumos seleccionados hoy o en los últimos 7 días, se muestra un aviso (no bloquea el registro).
+2. Se puede consultar el historial completo de entregas de una persona (desde `/personas`) y de una familia (desde `/familias`).
+
+**Prioridad:** Alta · **SP:** `sp_entregas_recientes`, `sp_historial_entregas_persona`, `sp_historial_entregas_familia`
+
+---
+
 ## Mapa de SPs por historia
 
 | Historia | SP(s) involucrados |
@@ -318,3 +350,5 @@ Generación de reportes consolidados para coordinación, transparencia y rendici
 | HU-12 | `sp_buscar_persona` |
 | HU-13 | `sp_reporte_centro` |
 | HU-14 | `sp_resumen_panel` |
+| HU-15 | `sp_crear_grupo_familiar`, `sp_editar_grupo_familiar`, `sp_listar_grupos_familiares`, `sp_detalle_grupo_familiar`, `sp_buscar_grupo_familiar` |
+| HU-16 | `sp_entregas_recientes`, `sp_historial_entregas_persona`, `sp_historial_entregas_familia` |

@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dialog'
 import { Field, LeyendaObligatoria, inputCls } from '@/components/app/form'
 import { BuscadorPersonaInline } from '@/components/app/buscador-persona-inline'
+import { BuscadorFamiliaInline, type Familia } from '@/components/app/buscador-familia-inline'
+import { AvisoEntregasRecientes } from '@/components/app/aviso-entregas-recientes'
 import { BuscadorDestinoInline, type Destino } from '@/components/app/buscador-destino-inline'
 import { type Insumo } from '@/components/app/buscador-insumo-inline'
 import { FilaInsumoEgreso, type ItemEgreso } from '@/components/app/fila-insumo-egreso'
@@ -117,6 +119,9 @@ export function FormularioEgreso({
   // — Contacto —
   const [contactoSeleccionado, setContactoSeleccionado] = useState<Persona | null>(null)
 
+  // — Grupo familiar (opcional) —
+  const [familiaSeleccionada, setFamiliaSeleccionada] = useState<Familia | null>(null)
+
   // — Responsables —
   const [responsables, setResponsables] = useState<Responsable[]>([])
   const [respManual, setRespManual] = useState({ nombre: '', apellido: '', telefono: '' })
@@ -211,6 +216,19 @@ export function FormularioEgreso({
     }
   }
 
+  function seleccionarFamilia(f: Familia) {
+    setFamiliaSeleccionada(f)
+    // El representante de la familia pasa a ser la persona de contacto que recibe.
+    setValue('contacto_modo', 'existente')
+    setContactoSeleccionado({
+      id: f.representante_id,
+      nombre: f.representante_nombre,
+      apellido: f.representante_apellido,
+      telefono: f.representante_telefono ?? '',
+      cedula: f.representante_cedula,
+    })
+  }
+
   function actualizarItem(index: number, patch: Partial<ItemEgreso>) {
     setItems(prev => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)))
   }
@@ -290,6 +308,7 @@ export function FormularioEgreso({
       p_persona_contacto_id: contactoId, p_responsables: responsables,
       p_observaciones: data.observaciones || undefined, p_items: itemsPayload,
       p_afecta_inventario: data.afecta_inventario,
+      p_grupo_familiar_id: familiaSeleccionada?.id ?? undefined,
     })
     if (rpcError) { setError(traducirError(rpcError.message)); return }
     cerrar()
@@ -365,6 +384,7 @@ export function FormularioEgreso({
     setCategoriaDestinoSeleccion('')
     setNuevaCategoriaDestinoNombre('')
     setContactoSeleccionado(null)
+    setFamiliaSeleccionada(null)
     setResponsables([])
     setRespManual({ nombre: '', apellido: '', telefono: '' })
     setBusquedaResp('')
@@ -644,6 +664,27 @@ export function FormularioEgreso({
               </div>
             )}
 
+            {/* Grupo familiar (opcional) */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                Grupo familiar{' '}
+                <span className="font-normal text-muted-foreground">(opcional)</span>
+              </p>
+              <div className="rounded-md bg-muted/40 p-3">
+                <BuscadorFamiliaInline
+                  centroId={centroId}
+                  seleccionada={familiaSeleccionada}
+                  onSelect={seleccionarFamilia}
+                  onCambiar={() => setFamiliaSeleccionada(null)}
+                />
+                {familiaSeleccionada && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    El representante quedó como persona de contacto que recibe.
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Persona contacto */}
             <div className="space-y-2">
               <p className="text-sm font-medium">Persona contacto (recibe) *</p>
@@ -692,6 +733,14 @@ export function FormularioEgreso({
                 </div>
               </div>
             )}
+
+            {/* Aviso de entregas recientes (no bloqueante) */}
+            <AvisoEntregasRecientes
+              centroId={centroId}
+              personaId={contactoSeleccionado?.id ?? null}
+              grupoFamiliarId={familiaSeleccionada?.id ?? null}
+              insumoIds={items.filter(it => it.insumo_id).map(it => it.insumo_id)}
+            />
 
             {/* Responsables de entrega */}
             <div className="space-y-2">
