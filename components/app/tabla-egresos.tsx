@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { DetalleEgresoDialog, type FilaEgreso } from '@/components/app/detalle-egreso-dialog'
 import { formatFecha } from '@/lib/utils'
